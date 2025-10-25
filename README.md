@@ -57,11 +57,11 @@ Follow these instructions to get the project running on your local machine.
 
 ### 2\. Installation
 
-1.  **Clone the repository:** (Replace `your-repo-name` with your actual repository name)
+1.  **Clone the repository:** 
 
     ```bash
-    git clone https://github.com/your-username/your-repo-name.git
-    cd your-repo-name
+    git clone https://github.com/Dhy4n-117/Sentiment-Analysis.git
+    cd Sentiment-Analysis
     ```
 
 2.  **Create and activate a virtual environment (Recommended):**
@@ -142,7 +142,3 @@ advanced-sentiment-analysis/
 ```
 
 -----
-
-## License
-
-This project is licensed under the MIT License. See the `LICENSE` file for details.
