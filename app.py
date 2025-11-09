@@ -564,7 +564,7 @@ def save_to_history(result: Dict):
 # Sidebar
 # ----------------------------
 with st.sidebar:
-    st.markdown("###Dashboard")
+    st.markdown("Dashboard")
     st.markdown("*Advanced Sentiment Analysis*")
     st.markdown("---")
 
@@ -969,3 +969,4 @@ elif page == "ℹ️ About":
     """)
 
     st.success("✅ All features working perfectly!")
+
