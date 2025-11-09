@@ -416,85 +416,144 @@ def transcribe_audio(audio_path: str) -> str:
 # ----------------------------
 # Display Functions
 # ----------------------------
-def display_analysis_results(result: Dict):
-    """Display analysis results"""
+
+# --- START: NEW HELPER FUNCTION ---
+def create_sentiment_gauge(score, sentiment_label):
+    """
+    Creates a Plotly gauge chart for the sentiment score.
+    Score is assumed to be from 0 to 1 (which your 'combined_score' is).
+    """
+    if sentiment_label == 'POSITIVE':
+        gauge_color = "#4CAF50" # Green
+    elif sentiment_label == 'NEGATIVE':
+        gauge_color = "#F44336" # Red
+    else:
+        gauge_color = "#FBBC05" # Yellow
+
+    # Your combined_score is already [0, 1] so no need to normalize
+    fig = go.Figure(go.Indicator(
+        mode = "gauge+number",
+        value = score,
+        number = {'valueformat': '.2f', 'font': {'size': 30}},
+        domain = {'x': [0, 1], 'y': [0, 1]},
+        title = {'text': f"Overall Sentiment: {sentiment_label}", 'font': {'size': 24}},
+        gauge = {
+            'axis': {'range': [0, 1], 'tickwidth': 1, 'tickcolor': "darkblue"},
+            'bar': {'color': gauge_color},
+            'bgcolor': "white",
+            'borderwidth': 2,
+            'bordercolor': "#CCCCCC",
+            'steps': [
+                {'range': [0, 0.4], 'color': '#FFCDD2'}, # Light Red
+                {'range': [0.4, 0.6], 'color': '#FFF9C4'}, # Light Yellow
+                {'range': [0.6, 1], 'color': '#C8E6C9'}  # Light Green
+            ],
+            'threshold': {
+                'line': {'color': "gray", 'width': 4},
+                'thickness': 0.75,
+                'value': 0.5 # Neutral line
+            }
+        }
+    ))
+    
+    fig.update_layout(
+        height=300, 
+        margin=dict(l=20, r=20, t=50, b=20)
+    )
+    return fig
+# --- END: NEW HELPER FUNCTION ---
+
+
+# --- START: NEW REPLACEMENT DISPLAY FUNCTION ---
+# This one function REPLACES both 'display_analysis_results' and 'display_aspect_analysis'
+def show_new_results(result: Dict, aspects: List[Dict] = None):
+    """
+    Display analysis results in a new, clean tabbed interface.
+    """
     if not result:
+        st.error("No analysis result to display.")
         return
+
+    # If aspects aren't passed in, try to generate them from the text
+    if aspects is None:
+        with st.spinner("Extracting aspects..."):
+            aspects = extract_aspects(result['text'])
 
     st.markdown("---")
     st.markdown("### 📊 Analysis Results")
+    
+    # Create the tabs
+    tab_titles = ["📈 Sentiment Score", "😊 Emotions", "🎯 Aspect Analysis", "🔍 Detailed Breakdown"]
+    tab1, tab2, tab3, tab4 = st.tabs(tab_titles)
 
-    sentiment_emoji = {'POSITIVE': '😊', 'NEGATIVE': '😞', 'NEUTRAL': '😐'}
-
-    col1, col2, col3 = st.columns([2, 1, 1])
-
-    with col1:
-        st.markdown(f"""
-        <div class="sentiment-card">
-            <div class="sentiment-score">{result['combined_score']:.2f}</div>
-            <div class="sentiment-label">{sentiment_emoji.get(result['final_sentiment'], '😐')} {result['final_sentiment']}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col2:
-        st.metric("BERT Score", f"{result['bert_score']:.2f}", result['bert_sentiment'])
-        st.metric("Word Count", result['word_count'])
-
-    with col3:
-        st.metric("VADER Score", f"{result['vader_compound']:.2f}", result['vader_sentiment'])
-        st.metric("Confidence", f"{result['confidence']:.2%}")
-
-    st.markdown("### 😊 Emotion Analysis")
-    emotion_cols = st.columns(6)
-    emotion_icons = ['😄', '😢', '😠', '😨', '😲', '🤝']
-    emotion_names = ['Joy', 'Sadness', 'Anger', 'Fear', 'Surprise', 'Trust']
-
-    for col, icon, name, key in zip(emotion_cols, emotion_icons, emotion_names, result['emotions'].keys()):
-        with col:
-            value = result['emotions'][key]
+    with tab1:
+        st.subheader("Hybrid Sentiment Score")
+        try:
+            # Use the new gauge function
+            fig_gauge = create_sentiment_gauge(result['combined_score'], result['final_sentiment'])
+            st.plotly_chart(fig_gauge, use_container_width=True)
+        except Exception as e:
+            st.error(f"Could not generate sentiment gauge: {e}")
+            # Fallback to old card
             st.markdown(f"""
-            <div class="emotion-card">
-                <div class="emotion-icon">{icon}</div>
-                <div class="emotion-name">{name}</div>
-                <div class="emotion-value">{value:.0f}%</div>
+            <div class="sentiment-card">
+                <div class="sentiment-score">{result['combined_score']:.2f}</div>
+                <div class="sentiment-label">{result['final_sentiment']}</div>
             </div>
             """, unsafe_allow_html=True)
-            st.progress(value / 100)
 
-    with st.expander("🔍 Detailed Breakdown"):
-        col1, col2 = st.columns(2)
+    with tab2:
+        st.subheader("Emotion Analysis")
+        try:
+            # Use a bar chart
+            emotion_data = {label.title(): score for label, score in result['emotions'].items() if score > 0}
+            if emotion_data:
+                # Convert to DataFrame for better labeling in Plotly
+                df_emotions = pd.DataFrame(emotion_data.items(), columns=['Emotion', 'Score (%)'])
+                fig = px.bar(df_emotions, x='Emotion', y='Score (%)', color='Emotion',
+                             title="Detected Emotions", text='Score (%)')
+                fig.update_traces(texttemplate='%{text:.0f}%', textposition='outside')
+                fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide', showlegend=False)
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("No distinct emotions detected.")
+        except Exception as e:
+            st.error(f"Could not generate emotion chart: {e}")
+            st.write(result['emotions']) # Show raw output
+
+    with tab3:
+        st.subheader("Aspect-Based Sentiment")
+        if not aspects:
+            st.info("No specific aspects were detected in the text.")
+        else:
+            # Use a cleaner table format
+            aspect_data = {
+                "Aspect": [a['aspect'].title() for a in aspects],
+                "Sentiment": [a['sentiment'] for a in aspects],
+                "Score": [f"{a['score']:.2f}" for a in aspects],
+                "Context": [f"'{a['context'][:100]}...'" for a in aspects]
+            }
+            df_aspects = pd.DataFrame(aspect_data)
+            st.dataframe(df_aspects, use_container_width=True, hide_index=True)
+
+    with tab4:
+        st.subheader("Detailed Breakdown")
+        col1, col2, col3 = st.columns(3)
         with col1:
+            st.metric("Word Count", result['word_count'])
+            st.metric("Confidence", f"{result['confidence']:.2%}")
+        with col2:
             st.markdown("*BERT Analysis*")
             st.write(f"- Label: {result['bert_label']}")
             st.write(f"- Sentiment: {result['bert_sentiment']}")
             st.write(f"- Confidence: {result['bert_score']:.2%}")
-        with col2:
+        with col3:
             st.markdown("*VADER Analysis*")
             st.write(f"- Compound: {result['vader_compound']:.3f}")
             st.write(f"- Positive: {result['vader_pos']:.2%}")
             st.write(f"- Negative: {result['vader_neg']:.2%}")
             st.write(f"- Neutral: {result['vader_neu']:.2%}")
-
-
-def display_aspect_analysis(aspects: List[Dict]):
-    """Display aspect analysis"""
-    st.markdown("### 🎯 Aspect-Based Analysis")
-
-    if not aspects:
-        st.info("No specific aspects detected.")
-        return
-
-    for aspect in aspects:
-        sentiment_class = f"aspect-{aspect['sentiment'].lower()}"
-        sentiment_emoji = {'POSITIVE': '😊', 'NEGATIVE': '😞', 'NEUTRAL': '😐'}
-
-        st.markdown(f"""
-        <div class="aspect-card {sentiment_class}">
-            <strong>📌 {aspect['aspect'].title()}</strong><br>
-            Sentiment: {sentiment_emoji.get(aspect['sentiment'], '😐')} {aspect['sentiment']} (Score: {aspect['score']:.2f})<br>
-            <em>Context: "{aspect['context'][:100]}..."</em>
-        </div>
-        """, unsafe_allow_html=True)
+# --- END: NEW REPLACEMENT DISPLAY FUNCTION ---
 
 
 def save_to_history(result: Dict):
@@ -565,7 +624,7 @@ elif page == "🔍 Analyzer":
     with tab1:
         st.markdown("### Text Analysis")
         text_input = st.text_area("Enter text", height=200, key="text_analysis_input",
-                                  placeholder="Type or paste your text here...")
+                                    placeholder="Type or paste your text here...")
 
         col1, col2 = st.columns([2, 1])
         with col1:
@@ -575,7 +634,9 @@ elif page == "🔍 Analyzer":
                         result = analyze_text_comprehensive(text_input)
                         if result:
                             st.success("✅ Complete!")
-                            display_analysis_results(result)
+                            # --- CHANGED ---
+                            show_new_results(result) # Was display_analysis_results(result)
+                            # --- END CHANGE ---
                             save_to_history(result)
                 else:
                     st.warning("⚠️ Please enter some text")
@@ -607,7 +668,9 @@ elif page == "🔍 Analyzer":
                         st.success(f"✅ Transcribed: {transcript}")
                         result = analyze_text_comprehensive(transcript)
                         if result:
-                            display_analysis_results(result)
+                            # --- CHANGED ---
+                            show_new_results(result) # Was display_analysis_results(result)
+                            # --- END CHANGE ---
                             save_to_history(result)
                     else:
                         st.error(transcript)
@@ -615,7 +678,7 @@ elif page == "🔍 Analyzer":
     with tab3:
         st.markdown("### 🎯 Aspect-Based Analysis")
         aspect_text = st.text_area("Enter text with multiple aspects", height=200, key="aspect_input",
-                                   placeholder="e.g., 'The camera is great, but the battery life is disappointing.'")
+                                     placeholder="e.g., 'The camera is great, but the battery life is disappointing.'")
 
         if st.button("🔍 Analyze Aspects", use_container_width=True, key="aspect_btn"):
             if aspect_text.strip():
@@ -623,12 +686,12 @@ elif page == "🔍 Analyzer":
                     aspects = extract_aspects(aspect_text)
                     overall = analyze_text_comprehensive(aspect_text)
 
+                    # --- CHANGED ---
                     if overall:
-                        st.markdown("#### Overall Sentiment")
-                        display_analysis_results(overall)
-                        st.markdown("---")
-                        display_aspect_analysis(aspects)
+                        # This one call replaces the two old ones
+                        show_new_results(overall, aspects)
                         save_to_history(overall)
+                    # --- END CHANGE ---
             else:
                 st.warning("⚠️ Please enter some text")
 
@@ -689,7 +752,9 @@ elif page == "🎬 Video Analysis":
 
                                     result = analyze_text_comprehensive(transcript)
                                     if result:
-                                        display_analysis_results(result)
+                                        # --- CHANGED ---
+                                        show_new_results(result) # Was display_analysis_results(result)
+                                        # --- END CHANGE ---
                                         save_to_history(result)
                                         st.balloons()
                                 else:
@@ -789,11 +854,13 @@ elif page == "🎬 Video Analysis":
                                                 result = analyze_text_comprehensive(transcript)
                                                 if result:
                                                     st.success("✅ Analysis complete!")
-                                                    display_analysis_results(result)
+                                                    # --- CHANGED ---
+                                                    show_new_results(result) # Was display_analysis_results(result)
+                                                    # --- END CHANGE ---
                                                     save_to_history(result)
-                                        else:
-                                            st.error(transcript)
-                                            st.warning("Video may not contain clear speech")
+                                                else:
+                                                    st.error(transcript)
+                                                    st.warning("Video may not contain clear speech")
                                 else:
                                     st.error("❌ Audio extraction failed")
 
@@ -852,7 +919,7 @@ elif page == "📚 History":
             df = pd.DataFrame(st.session_state.history)
             csv = df.to_csv(index=False)
             st.download_button("📥 Download CSV", csv, f"history_{datetime.now().strftime('%Y%m%d')}.csv",
-                               "text/csv", use_container_width=True, key="download_csv")
+                                "text/csv", use_container_width=True, key="download_csv")
 
         st.markdown("---")
 
