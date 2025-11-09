@@ -550,8 +550,8 @@ def show_new_results(result: Dict, aspects: List[Dict] = None):
         st.markdown("*VADER Analysis*")
         st.write(f"- Compound: {result['vader_compound']:.3f}")
         st.write(f"- Positive: {result['vader_pos']:.2%}")
-        st.write(f"- Negative: {result['neg_pos']:.2%}")
-        st.write(f"- Neutral: {result['neu_pos']:.2%}")
+        st.write(f"- Negative: {result['vader_neg']:.2%}")
+        st.write(f"- Neutral: {result['vader_neu']:.2%}")
 
 
 def save_to_history(result: Dict):
@@ -969,4 +969,5 @@ elif page == "ℹ️ About":
     """)
 
     st.success("✅ All features working perfectly!")
+
 
