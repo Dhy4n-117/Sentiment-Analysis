@@ -27,7 +27,7 @@ import re
 # Page Configuration
 # ----------------------------
 st.set_page_config(
-    page_title="SentiAI - Advanced Sentiment Analysis",
+    page_title="Advanced Sentiment Analysis",
     page_icon="🧠",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -977,3 +977,4 @@ elif page == "ℹ️ About":
     """)
 
     st.success("✅ All features working perfectly!")
+
