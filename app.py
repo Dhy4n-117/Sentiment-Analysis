@@ -417,17 +417,28 @@ def transcribe_audio(audio_path: str) -> str:
 # Display Functions
 # ----------------------------
 
+# --- START: REPLACEMENT 'create_sentiment_gauge' FUNCTION ---
+
 def create_sentiment_gauge(score, sentiment_label):
     """
     Creates a Plotly gauge chart for the sentiment score.
     Score is assumed to be from 0 to 1 (which your 'combined_score' is).
     """
+    
+    # Determine gauge color AND title color
     if sentiment_label == 'POSITIVE':
         gauge_color = "#4CAF50" # Green
+        title_color = "#4CAF50"
     elif sentiment_label == 'NEGATIVE':
         gauge_color = "#F44336" # Red
-    else:
+        title_color = "#F44336"
+    else: # NEUTRAL
         gauge_color = "#FBBC05" # Yellow
+        title_color = "#FBBC05"
+
+    # Create the title text with HTML for coloring
+    title_text = f"Overall Sentiment: <span style='color:{title_color}; font-weight:bold;'>{sentiment_label}</span>"
+
 
     # Your combined_score is already [0, 1] so no need to normalize
     fig = go.Figure(go.Indicator(
@@ -435,7 +446,10 @@ def create_sentiment_gauge(score, sentiment_label):
         value = score,
         number = {'valueformat': '.2f', 'font': {'size': 30}},
         domain = {'x': [0, 1], 'y': [0, 1]},
-        title = {'text': f"Overall Sentiment: {sentiment_label}", 'font': {'size': 24}},
+        
+        # We use the new 'title_text' variable here
+        title = {'text': title_text, 'font': {'size': 24}},
+        
         gauge = {
             'axis': {'range': [0, 1], 'tickwidth': 1, 'tickcolor': "darkblue"},
             'bar': {'color': gauge_color},
@@ -460,7 +474,6 @@ def create_sentiment_gauge(score, sentiment_label):
         margin=dict(l=20, r=20, t=50, b=20)
     )
     return fig
-
 
 def show_new_results(result: Dict, aspects: List[Dict] = None):
     """
@@ -983,3 +996,4 @@ elif page == "ℹ️ About":
     """)
 
     st.success("✅ All features working perfectly!")
+
