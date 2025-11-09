@@ -465,10 +465,11 @@ def create_sentiment_gauge(score, sentiment_label):
 
 
 # --- START: NEW REPLACEMENT DISPLAY FUNCTION ---
-# This one function REPLACES both 'display_analysis_results' and 'display_aspect_analysis'
+# --- START: NEW REPLACEMENT DISPLAY FUNCTION (NO TABS) ---
+# This REPLACES the 'show_new_results' function
 def show_new_results(result: Dict, aspects: List[Dict] = None):
     """
-    Display analysis results in a new, clean tabbed interface.
+    Display analysis results in a new, clean one-page layout (no tabs).
     """
     if not result:
         st.error("No analysis result to display.")
@@ -482,78 +483,81 @@ def show_new_results(result: Dict, aspects: List[Dict] = None):
     st.markdown("---")
     st.markdown("### 📊 Analysis Results")
     
-    # Create the tabs
-    tab_titles = ["📈 Sentiment Score", "😊 Emotions", "🎯 Aspect Analysis", "🔍 Detailed Breakdown"]
-    tab1, tab2, tab3, tab4 = st.tabs(tab_titles)
+    
+    # --- 1. Sentiment Score (Gauge) ---
+    st.subheader("📈 Hybrid Sentiment Score")
+    try:
+        # Use the new gauge function
+        fig_gauge = create_sentiment_gauge(result['combined_score'], result['final_sentiment'])
+        st.plotly_chart(fig_gauge, use_container_width=True)
+    except Exception as e:
+        st.error(f"Could not generate sentiment gauge: {e}")
+        # Fallback to old card
+        st.markdown(f"""
+        <div class="sentiment-card">
+            <div class="sentiment-score">{result['combined_score']:.2f}</div>
+            <div class="sentiment-label">{result['final_sentiment']}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-    with tab1:
-        st.subheader("Hybrid Sentiment Score")
-        try:
-            # Use the new gauge function
-            fig_gauge = create_sentiment_gauge(result['combined_score'], result['final_sentiment'])
-            st.plotly_chart(fig_gauge, use_container_width=True)
-        except Exception as e:
-            st.error(f"Could not generate sentiment gauge: {e}")
-            # Fallback to old card
-            st.markdown(f"""
-            <div class="sentiment-card">
-                <div class="sentiment-score">{result['combined_score']:.2f}</div>
-                <div class="sentiment-label">{result['final_sentiment']}</div>
-            </div>
-            """, unsafe_allow_html=True)
+    st.divider() # Adds a horizontal line
 
-    with tab2:
-        st.subheader("Emotion Analysis")
-        try:
-            # Use a bar chart
-            emotion_data = {label.title(): score for label, score in result['emotions'].items() if score > 0}
-            if emotion_data:
-                # Convert to DataFrame for better labeling in Plotly
-                df_emotions = pd.DataFrame(emotion_data.items(), columns=['Emotion', 'Score (%)'])
-                fig = px.bar(df_emotions, x='Emotion', y='Score (%)', color='Emotion',
-                             title="Detected Emotions", text='Score (%)')
-                fig.update_traces(texttemplate='%{text:.0f}%', textposition='outside')
-                fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide', showlegend=False)
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info("No distinct emotions detected.")
-        except Exception as e:
-            st.error(f"Could not generate emotion chart: {e}")
-            st.write(result['emotions']) # Show raw output
-
-    with tab3:
-        st.subheader("Aspect-Based Sentiment")
-        if not aspects:
-            st.info("No specific aspects were detected in the text.")
+    # --- 2. Emotion Analysis (Bar Chart) ---
+    st.subheader("😊 Emotion Analysis")
+    try:
+        # Use a bar chart
+        emotion_data = {label.title(): score for label, score in result['emotions'].items() if score > 0}
+        if emotion_data:
+            # Convert to DataFrame for better labeling in Plotly
+            df_emotions = pd.DataFrame(emotion_data.items(), columns=['Emotion', 'Score (%)'])
+            fig = px.bar(df_emotions, x='Emotion', y='Score (%)', color='Emotion',
+                         title="Detected Emotions", text='Score (%)')
+            fig.update_traces(texttemplate='%{text:.0f}%', textposition='outside')
+            fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide', showlegend=False)
+            st.plotly_chart(fig, use_container_width=True)
         else:
-            # Use a cleaner table format
-            aspect_data = {
-                "Aspect": [a['aspect'].title() for a in aspects],
-                "Sentiment": [a['sentiment'] for a in aspects],
-                "Score": [f"{a['score']:.2f}" for a in aspects],
-                "Context": [f"'{a['context'][:100]}...'" for a in aspects]
-            }
-            df_aspects = pd.DataFrame(aspect_data)
-            st.dataframe(df_aspects, use_container_width=True, hide_index=True)
+            st.info("No distinct emotions detected.")
+    except Exception as e:
+        st.error(f"Could not generate emotion chart: {e}")
+        st.write(result['emotions']) # Show raw output
 
-    with tab4:
-        st.subheader("Detailed Breakdown")
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Word Count", result['word_count'])
-            st.metric("Confidence", f"{result['confidence']:.2%}")
-        with col2:
-            st.markdown("*BERT Analysis*")
-            st.write(f"- Label: {result['bert_label']}")
-            st.write(f"- Sentiment: {result['bert_sentiment']}")
-            st.write(f"- Confidence: {result['bert_score']:.2%}")
-        with col3:
-            st.markdown("*VADER Analysis*")
-            st.write(f"- Compound: {result['vader_compound']:.3f}")
-            st.write(f"- Positive: {result['vader_pos']:.2%}")
-            st.write(f"- Negative: {result['vader_neg']:.2%}")
-            st.write(f"- Neutral: {result['vader_neu']:.2%}")
-# --- END: NEW REPLACEMENT DISPLAY FUNCTION ---
+    st.divider() # Adds a horizontal line
+
+    # --- 3. Aspect-Based Sentiment (Table) ---
+    st.subheader("🎯 Aspect-Based Sentiment")
+    if not aspects:
+        st.info("No specific aspects were detected in the text.")
+    else:
+        # Use a cleaner table format
+        aspect_data = {
+            "Aspect": [a['aspect'].title() for a in aspects],
+            "Sentiment": [a['sentiment'] for a in aspects],
+            "Score": [f"{a['score']:.2f}" for a in aspects],
+            "Context": [f"'{a['context'][:100]}...'" for a in aspects]
+        }
+        df_aspects = pd.DataFrame(aspect_data)
+        st.dataframe(df_aspects, use_container_width=True, hide_index=True)
+
+    st.divider() # Adds a horizontal line
+
+    # --- 4. Detailed Breakdown (Metrics) ---
+    st.subheader("🔍 Detailed Breakdown")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Word Count", result['word_count'])
+        st.metric("Confidence", f"{result['confidence']:.2%}")
+    with col2:
+        st.markdown("*BERT Analysis*")
+        st.write(f"- Label: {result['bert_label']}")
+        st.write(f"- Sentiment: {result['bert_sentiment']}")
+        st.write(f"- Confidence: {result['bert_score']:.2%}")
+    with col3:
+        st.markdown("*VADER Analysis*")
+        st.write(f"- Compound: {result['vader_compound']:.3f}")
+        st.write(f"- Positive: {result['vader_pos']:.2%}")
+        st.write(f"- Negative: {result['vader_neg']:.2%}")
+        st.write(f"- Neutral: {result['vader_neu']:.2%}")
+# --- END: NEW REPLACEMENT DISPLAY FUNCTION (NO TABS) ---
 
 
 def save_to_history(result: Dict):
@@ -977,4 +981,5 @@ elif page == "ℹ️ About":
     """)
 
     st.success("✅ All features working perfectly!")
+
 
