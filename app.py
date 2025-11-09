@@ -536,7 +536,7 @@ def show_new_results(result: Dict, aspects: List[Dict] = None):
             "Context": [f"'{a['context'][:100]}...'" for a in aspects]
         }
         df_aspects = pd.DataFrame(aspect_data)
-        st.dataframe(df_aspects, use_container_width=True, hide_index=True)
+        st.dataframe(df_aspects, use_container_width=False, hide_index=True)
 
     st.divider() # Adds a horizontal line
 
@@ -980,6 +980,7 @@ elif page == "ℹ️ About":
     """)
 
     st.success("✅ All features working perfectly!")
+
 
 
 
