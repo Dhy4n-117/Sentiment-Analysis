@@ -20,3 +20,6 @@ spacy>=3.6.0
 # Data & Visualization
 plotly>=5.14.0
 pandas>=2.0.0
+
+requests
+beautifulsoup4
