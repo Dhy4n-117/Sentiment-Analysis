@@ -423,40 +423,40 @@ def create_sentiment_gauge(score, sentiment_label):
     Score is assumed to be from 0 to 1 (which your 'combined_score' is).
     """
     if sentiment_label == 'POSITIVE':
-        gauge_color = "#4CAF50"  # Green
+        gauge_color = "#4CAF50" # Green
     elif sentiment_label == 'NEGATIVE':
-        gauge_color = "#F44336"  # Red
+        gauge_color = "#F44336" # Red
     else:
-        gauge_color = "#FBBC05"  # Yellow
+        gauge_color = "#FBBC05" # Yellow
 
     # Your combined_score is already [0, 1] so no need to normalize
     fig = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=score,
-        number={'valueformat': '.2f', 'font': {'size': 30}},
-        domain={'x': [0, 1], 'y': [0, 1]},
-        title={'text': f"Overall Sentiment: {sentiment_label}", 'font': {'size': 24}},
-        gauge={
+        mode = "gauge+number",
+        value = score,
+        number = {'valueformat': '.2f', 'font': {'size': 30}},
+        domain = {'x': [0, 1], 'y': [0, 1]},
+        title = {'text': f"Overall Sentiment: {sentiment_label}", 'font': {'size': 24}},
+        gauge = {
             'axis': {'range': [0, 1], 'tickwidth': 1, 'tickcolor': "darkblue"},
             'bar': {'color': gauge_color},
             'bgcolor': "white",
             'borderwidth': 2,
             'bordercolor': "#CCCCCC",
             'steps': [
-                {'range': [0, 0.4], 'color': '#FFCDD2'},  # Light Red
-                {'range': [0.4, 0.6], 'color': '#FFF9C4'},  # Light Yellow
+                {'range': [0, 0.4], 'color': '#FFCDD2'}, # Light Red
+                {'range': [0.4, 0.6], 'color': '#FFF9C4'}, # Light Yellow
                 {'range': [0.6, 1], 'color': '#C8E6C9'}  # Light Green
             ],
             'threshold': {
                 'line': {'color': "gray", 'width': 4},
                 'thickness': 0.75,
-                'value': 0.5  # Neutral line
+                'value': 0.5 # Neutral line
             }
         }
     ))
-
+    
     fig.update_layout(
-        height=300,
+        height=300, 
         margin=dict(l=20, r=20, t=50, b=20)
     )
     return fig
@@ -477,7 +477,8 @@ def show_new_results(result: Dict, aspects: List[Dict] = None):
 
     st.markdown("---")
     st.markdown("### 📊 Analysis Results")
-
+    
+    
     # --- 1. Sentiment Score (Gauge) ---
     st.subheader("📈 Hybrid Sentiment Score")
     try:
@@ -494,7 +495,7 @@ def show_new_results(result: Dict, aspects: List[Dict] = None):
         </div>
         """, unsafe_allow_html=True)
 
-    st.divider()  # Adds a horizontal line
+    st.divider() # Adds a horizontal line
 
     # --- 2. Emotion Analysis (Bar Chart) ---
     st.subheader("😊 Emotion Analysis")
@@ -513,9 +514,9 @@ def show_new_results(result: Dict, aspects: List[Dict] = None):
             st.info("No distinct emotions detected.")
     except Exception as e:
         st.error(f"Could not generate emotion chart: {e}")
-        st.write(result['emotions'])  # Show raw output
+        st.write(result['emotions']) # Show raw output
 
-    st.divider()  # Adds a horizontal line
+    st.divider() # Adds a horizontal line
 
     # --- 3. Aspect-Based Sentiment (Using your CSS Cards) ---
     st.subheader("🎯 Aspect-Based Sentiment")
@@ -525,18 +526,18 @@ def show_new_results(result: Dict, aspects: List[Dict] = None):
         # This uses your original, colorful CSS classes
         sentiment_emoji = {'POSITIVE': '😊', 'NEGATIVE': '😞', 'NEUTRAL': '😐'}
         for aspect in aspects:
-            sentiment_class = f"aspect-{aspect['sentiment'].lower()}"  # This uses your CSS!
-
-            st.markdown(f"""
+            sentiment_class = f"aspect-{aspect['sentiment'].lower()}" # This uses your CSS!
+            
+            st.markdown(f'''
             <div class="aspect-card {sentiment_class}">
                 <strong>📌 {aspect['aspect'].title()}</strong><br>
                 Sentiment: {sentiment_emoji.get(aspect['sentiment'], '😐')} {aspect['sentiment']} (Score: {aspect['score']:.2f})<br>
                 <em>Context: "{aspect['context'][:100]}..."</em>
             </div>
-            """, unsafe_allow_html=True)
-            st.write("")  # Add a little space
+            ''', unsafe_allow_html=True)
+            st.write("") # Add a little space
 
-    st.divider()  # Adds a horizontal line
+    st.divider() # Adds a horizontal line
 
     # --- 4. Detailed Breakdown (Metrics) ---
     st.subheader("🔍 Detailed Breakdown")
@@ -547,20 +548,17 @@ def show_new_results(result: Dict, aspects: List[Dict] = None):
     with col2:
         st.markdown("*BERT Analysis*")
         st.write(f"- Label: {result['bert_label']}")
-
+        
         bert_sent = result['bert_sentiment']
         if bert_sent == 'POSITIVE':
-            st.markdown(f"- Sentiment: <span style='color:#4CAF50; font-weight:bold;'>{bert_sent}</span>",
-                        unsafe_allow_html=True)
+            st.markdown(f"- Sentiment: <span style='color:#4CAF50; font-weight:bold;'>{bert_sent}</span>", unsafe_allow_html=True)
         elif bert_sent == 'NEGATIVE':
-            st.markdown(f"- Sentiment: <span style='color:#F44336; font-weight:bold;'>{bert_sent}</span>",
-                        unsafe_allow_html=True)
-        else:  # NEUTRAL
-            st.markdown(f"- Sentiment: <span style='color:#FBBC05; font-weight:bold;'>{bert_sent}</span>",
-                        unsafe_allow_html=True)
-
+            st.markdown(f"- Sentiment: <span style='color:#F44336; font-weight:bold;'>{bert_sent}</span>", unsafe_allow_html=True)
+        else: # NEUTRAL
+            st.markdown(f"- Sentiment: <span style='color:#FBBC05; font-weight:bold;'>{bert_sent}</span>", unsafe_allow_html=True)
+            
         st.write(f"- Confidence: {result['bert_score']:.2%}")
-
+        
     with col3:
         st.markdown("*VADER Analysis*")
         st.write(f"- Compound: {result['vader_compound']:.3f}")
@@ -597,4 +595,391 @@ with st.sidebar:
         avg_score = np.mean([h['combined_score'] for h in st.session_state.history])
         st.metric("Avg Score", f"{avg_score:.2f}")
 
-    st.markdown
+    st.markdown("---")
+    st.caption("Built with 🧠 BERT + VADER • SpaCy")
+
+# ----------------------------
+# Pages
+# ----------------------------
+if page == "🏠 Home":
+    st.markdown('<div class="hero-title">🧠 SentiAI Platform</div>', unsafe_allow_html=True)
+    st.markdown('<div class="hero-subtitle">Advanced Multi-Modal Sentiment Analysis</div>', unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="feature-badges">
+        <span class="badge">🤖 BERT + VADER</span>
+        <span class="badge">🎬 Video Analysis</span>
+        <span class="badge">🎯 Aspect Analysis</span>
+        <span class="badge">💬 AI Chatbot</span>
+        <span class="badge">🎤 Voice Analysis</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown("### 📝 Text Analysis\nDual-model AI sentiment detection")
+    with col2:
+        st.markdown("### 🎬 Video Analysis\nTranscribe and analyze videos")
+    with col3:
+        st.markdown("### 🤖 Chatbot\nEmotion-aware conversations")
+
+    st.info("👉 Navigate to any section to start analyzing!")
+
+elif page == "🔍 Analyzer":
+    st.markdown("## 🔍 Advanced Sentiment Analyzer")
+
+    tab1, tab2, tab3 = st.tabs(["📝 Text", "🎤 Voice", "🎯 Aspects"])
+
+    with tab1:
+        st.markdown("### Text Analysis")
+        text_input = st.text_area("Enter text", height=200, key="text_analysis_input",
+                                    placeholder="Type or paste your text here...")
+
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            if st.button("🚀 Analyze Text", use_container_width=True, key="analyze_text_btn"):
+                if text_input.strip():
+                    with st.spinner("🔄 Analyzing..."):
+                        result = analyze_text_comprehensive(text_input)
+                        if result:
+                            st.success("✅ Complete!")
+                            show_new_results(result)
+                            save_to_history(result)
+                else:
+                    st.warning("⚠️ Please enter some text")
+
+        with col2:
+            if st.button("💡 Example", use_container_width=True, key="example_btn"):
+                st.info("Example: 'I love this product! It's amazing and exceeded my expectations.'")
+
+    with tab2:
+        st.markdown("### 🎤 Voice Recording")
+
+        try:
+            import pyaudio
+
+            pyaudio_available = True
+        except ImportError:
+            pyaudio_available = False
+
+        if not pyaudio_available:
+            st.warning("⚠️ *Voice Recording Not Available*")
+            st.info(
+                "Install PyAudio: pip install pyaudio (or brew install portaudio && pip install pyaudio on Mac)")
+        else:
+            st.info("🎤 Click to record your voice")
+            if st.button("🎙️ Start Recording", use_container_width=True, key="record_btn"):
+                with st.spinner("Recording..."):
+                    transcript = recognize_speech()
+                    if not transcript.startswith("❌"):
+                        st.success(f"✅ Transcribed: {transcript}")
+                        result = analyze_text_comprehensive(transcript)
+                        if result:
+                            show_new_results(result)
+                            save_to_history(result)
+                    else:
+                        st.error(transcript)
+
+    with tab3:
+        st.markdown("### 🎯 Aspect-Based Analysis")
+        aspect_text = st.text_area("Enter text with multiple aspects", height=200, key="aspect_input",
+                                     placeholder="e.g., 'The camera is great, but the battery life is disappointing.'")
+
+        if st.button("🔍 Analyze Aspects", use_container_width=True, key="aspect_btn"):
+            if aspect_text.strip():
+                with st.spinner("Extracting aspects..."):
+                    aspects = extract_aspects(aspect_text)
+                    overall = analyze_text_comprehensive(aspect_text)
+                    
+                    if overall:
+                        st.markdown("#### Overall Sentiment")
+                        show_new_results(overall, aspects)
+                        save_to_history(overall)
+            else:
+                st.warning("⚠️ Please enter some text")
+
+elif page == "🎬 Video Analysis":
+    st.markdown("## 🎬 Video Analysis")
+
+    tab1, tab2 = st.tabs(["📤 Upload Video", "🔗 YouTube URL"])
+
+    with tab1:
+        st.success("✅ *Recommended* - Upload your video file directly")
+
+        uploaded_video = st.file_uploader(
+            "Choose a video file",
+            type=['mp4', 'mov', 'avi', 'mkv', 'webm'],
+            key="video_uploader"
+        )
+
+        if uploaded_video:
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.video(uploaded_video)
+
+            with col2:
+                st.info(f"*File:* {uploaded_video.name}")
+                st.info(f"*Size:* {uploaded_video.size / (1024 * 1024):.2f} MB")
+                
+                analyze_button_pressed = st.button("🎬 Analyze Video", use_container_width=True, key="analyze_video_btn")
+            
+            if analyze_button_pressed:
+                try:
+                    os.makedirs("temp_files", exist_ok=True)
+                    tmp_path = os.path.join("temp_files", f"video_{int(time.time())}.mp4")
+
+                    with st.spinner("💾 Processing..."):
+                        with open(tmp_path, "wb") as f:
+                            f.write(uploaded_video.read())
+
+                    with st.spinner("🎵 Extracting audio..."):
+                        audio_path = extract_audio_from_video(tmp_path)
+                        if audio_path:
+                            st.success("✅ Audio extracted")
+                            st.audio(audio_path)
+                        else:
+                            st.error("Audio extraction failed. Cannot proceed.")
+                            if os.path.exists(tmp_path): os.remove(tmp_path)
+                            st.stop() # Stop the script
+
+                    with st.spinner("📝 Transcribing..."):
+                        transcript = transcribe_audio(audio_path)
+
+                        if not transcript.startswith("❌"):
+                            st.success("✅ Transcription complete!")
+
+                            with st.expander("📄 Transcript", expanded=True):
+                                st.text_area("", transcript, height=200, key="transcript_display")
+                                st.download_button(
+                                    "💾 Download",
+                                    transcript,
+                                    f"transcript_{int(time.time())}.txt",
+                                    key="download_transcript"
+                                )
+
+                            result = analyze_text_comprehensive(transcript)
+                            if result:
+                                show_new_results(result) 
+                                save_to_history(result)
+                                st.balloons()
+                        else:
+                            st.error(transcript)
+
+                    # Cleanup
+                    for f in [tmp_path, audio_path]:
+                        if f and os.path.exists(f):
+                            os.remove(f)
+
+                except Exception as e:
+                    st.error(f"❌ Error: {str(e)}")
+
+    with tab2:
+        st.info("🔗 Try YouTube direct download - Multiple methods will be attempted")
+
+        st.markdown("""
+        ### 💡 Tips for Success:
+        - Update yt-dlp first: pip install --upgrade yt-dlp
+        - Try shorter videos (under 10 minutes)
+        - Educational/tutorial videos work better
+        - Avoid music videos or copyrighted content
+        """)
+
+        yt_url = st.text_input("YouTube URL",
+                               placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                               key="yt_url")
+
+        if st.button("🚀 Download & Analyze", use_container_width=True, key="yt_btn"):
+            if yt_url:
+                st.info("⏳ Trying multiple download methods... Please wait...")
+
+                try:
+                    with st.spinner("📥 Downloading (this may take 1-2 minutes)..."):
+                        video_path = download_youtube_video(yt_url)
+
+                        if not video_path or not os.path.exists(video_path):
+                            st.error("❌ All download methods failed")
+                            st.markdown("""
+                            ### 😔 YouTube Download Failed
+
+                            *Why this happens:*
+                            - YouTube actively blocks automated downloads
+                            - Video may be region-restricted
+                            - Copyright protection
+                            - Rate limiting
+
+                            ### ✅ *What to do now:*
+
+                            *Quick Solution (2 minutes):*
+                            1. Go to [Y2Mate.com](https://y2mate.com)
+                            2. Paste your YouTube URL
+                            3. Download the video
+                            4. Use the *"Upload Video"* tab above ⬆️
+                            5. Upload your downloaded file
+
+                            *Or update yt-dlp:*
+                            bash
+                            pip install --upgrade yt-dlp
+
+                            Then restart the app and try again.
+                            """)
+                        else:
+                            st.success(f"✅ Successfully downloaded!")
+                            st.balloons()
+
+                            file_size = os.path.getsize(video_path) / (1024 * 1024)
+                            st.info(f"📊 File size: {file_size:.2f} MB")
+
+                            with st.spinner("🎵 Extracting audio..."):
+                                audio_path = extract_audio_from_video(video_path)
+                                if audio_path:
+                                    st.success("✅ Audio extracted")
+                                    st.audio(audio_path)
+
+                                    with st.spinner("📝 Transcribing... This may take a while..."):
+                                        transcript = transcribe_audio(audio_path)
+
+                                        if not transcript.startswith("❌"):
+                                            st.success("✅ Transcription complete!")
+                                            st.balloons()
+
+                                            with st.expander("📄 View Full Transcript", expanded=True):
+                                                st.text_area("Transcript", transcript, height=200, key="yt_transcript")
+                                                st.info(
+                                                    f"📊 Words: {len(transcript.split())} | Characters: {len(transcript)}")
+
+                                                st.download_button(
+                                                    "💾 Download Transcript",
+                                                    transcript,
+                                                    f"transcript_{int(time.time())}.txt",
+                                                    "text/plain",
+                                                    key="yt_download_transcript"
+                                                )
+
+                                            with st.spinner("🔄 Analyzing sentiment..."):
+                                                result = analyze_text_comprehensive(transcript)
+                                                if result:
+                                                    st.success("✅ Analysis complete!")
+                                                    show_new_results(result)
+                                                    save_to_history(result)
+                                                else:
+                                                    st.error(transcript)
+                                                    st.warning("Video may not contain clear speech")
+                                else:
+                                    st.error("❌ Audio extraction failed")
+
+                            # Cleanup
+                            for f in [video_path, audio_path]:
+                                if f and os.path.exists(f):
+                                    try:
+                                        os.remove(f)
+                                    except:
+                                        pass
+
+                except Exception as e:
+                    st.error(f"❌ Error: {str(e)}")
+                    st.info("💡 Use the 'Upload Video' tab instead - it always works!")
+            else:
+                st.warning("⚠️ Please enter a YouTube URL")
+
+elif page == "🤖 Chatbot":
+    st.markdown("## 🤖 Sentiment-Aware Chatbot")
+    st.info("Chat with AI that understands your emotions!")
+
+    for chat in st.session_state.chat_history:
+        if chat['role'] == 'user':
+            st.markdown(f'<div class="chat-message user-message">👤 {chat["message"]}</div>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'<div class="chat-message bot-message">🤖 {chat["message"]}</div>', unsafe_allow_html=True)
+
+    user_input = st.text_input("Your message:", key="chat_input")
+
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        if st.button("💬 Send", use_container_width=True, key="send_btn"):
+            if user_input.strip():
+                st.session_state.chat_history.append({'role': 'user', 'message': user_input})
+                bot_reply = chatbot_response(user_input)
+                st.session_state.chat_history.append({'role': 'bot', 'message': bot_reply})
+                st.rerun()
+
+    with col2:
+        if st.button("🗑️ Clear", use_container_width=True, key="clear_btn"):
+            st.session_state.chat_history = []
+            st.rerun()
+
+elif page == "📚 History":
+    st.markdown("## 📚 Analysis History")
+
+    if not st.session_state.history:
+        st.info("No history yet. Start analyzing!")
+    else:
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🗑️ Clear History", use_container_width=True, key="clear_history"):
+                st.session_state.history = []
+                st.rerun()
+        with col2:
+            df = pd.DataFrame(st.session_state.history)
+            csv = df.to_csv(index=False)
+            st.download_button("📥 Download CSV", csv, f"history_{datetime.now().strftime('%Y%m%d')}.csv",
+                                "text/csv", use_container_width=True, key="download_csv")
+
+        st.markdown("---")
+
+        for idx, analysis in enumerate(reversed(st.session_state.history)):
+            with st.expander(f"#{len(st.session_state.history) - idx} - {analysis['final_sentiment']}"):
+                st.write(f"*Text:* {analysis['text'][:200]}...")
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Sentiment", analysis['final_sentiment'])
+                with col2:
+                    st.metric("Score", f"{analysis['combined_score']:.2f}")
+                with col3:
+                    st.metric("Confidence", f"{analysis['confidence']:.2%}")
+
+elif page == "ℹ️ About":
+    st.markdown("## ℹ️ About SentiAI")
+
+    st.markdown("""
+    ### 🚀 Features
+
+    1. ✅ Text Sentiment Analysis (BERT + VADER)
+    2. ✅ Voice Recording & Transcription
+    3. ✅ Video Analysis
+    4. ✅ YouTube Video Analysis
+    5. ✅ Aspect-Based Sentiment Analysis
+    6. ✅ AI Chatbot with Emotion Detection
+    7. ✅ Analysis History & Export
+
+    ### 📦 Installation
+
+    bash
+    pip install "numpy<2.0" protobuf==3.20.3
+    pip install torch transformers streamlit vaderSentiment
+    pip install SpeechRecognition pydub opencv-python
+    pip install yt-dlp spacy plotly pandas
+    python -m spacy download en_core_web_sm
+
+
+    ### 🚀 Run
+
+    bash
+    streamlit run app.py
+
+
+    ### 🎯 How It Works
+
+    - *BERT* (60%): Deep contextual understanding
+    - *VADER* (40%): Lexicon-based analysis
+    - *Combined*: Weighted average with confidence metrics
+
+    ### 👥 Project
+
+    - *Type:* Final Year Project
+    - *Status:* Production Ready ✅
+    """)
+
+    st.success("✅ All features working perfectly!")
