@@ -61,7 +61,7 @@ This application follows a clear logic flow depending on the input type:
 
 1.  **Clone the Repository:**
     ```bash
-    git clone [https://github.com/Dhy4n-117/Sentiment-Analysis.git](https://github.com/Dhy4n-117/Sentiment-Analysis.git)
+    git clone [https://github.com/Dhy4n-117/Sentiment-Analysis.git]
     cd Sentiment-Analysis
     ```
 2.  **Install Prerequisites (Windows):**
