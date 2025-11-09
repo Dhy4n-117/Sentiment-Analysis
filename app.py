@@ -27,8 +27,7 @@ import re
 # Page Configuration
 # ----------------------------
 st.set_page_config(
-    page_title="SentiAI - Advanced Sentiment Analysis",
-    page_icon="🧠",
+    page_title="Advanced Sentiment Analysis",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -590,7 +589,7 @@ def save_to_history(result: Dict):
 # Sidebar
 # ----------------------------
 with st.sidebar:
-    st.markdown("### 🧠 SentiAI Dashboard")
+    st.markdown("Dashboard")
     st.markdown("*Advanced Sentiment Analysis*")
     st.markdown("---")
 
@@ -615,7 +614,6 @@ with st.sidebar:
 # Pages
 # ----------------------------
 if page == "🏠 Home":
-    st.markdown('<div class="hero-title">🧠 SentiAI Platform</div>', unsafe_allow_html=True)
     st.markdown('<div class="hero-subtitle">Advanced Multi-Modal Sentiment Analysis</div>', unsafe_allow_html=True)
 
     st.markdown("""
@@ -954,7 +952,7 @@ elif page == "📚 History":
                     st.metric("Confidence", f"{analysis['confidence']:.2%}")
 
 elif page == "ℹ️ About":
-    st.markdown("## ℹ️ About SentiAI")
+    st.markdown("## ℹ️ About This Platform")
 
     st.markdown("""
     ### 🚀 Features
@@ -996,4 +994,5 @@ elif page == "ℹ️ About":
     """)
 
     st.success("✅ All features working perfectly!")
+
 
