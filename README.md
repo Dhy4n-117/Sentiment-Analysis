@@ -64,11 +64,24 @@ This application follows a clear logic flow depending on the input type:
     git clone [https://github.com/Dhy4n-117/Sentiment-Analysis.git]
     cd Sentiment-Analysis
     ```
-2.  **Install Prerequisites (Windows):**
-    * This project requires **FFmpeg** for processing video and audio files.
-    * Download and install FFmpeg from [gyan.dev](https://www.gyan.dev/ffmpeg/builds/) (get the `ffmpeg-release-full.7z` file).
-    * Extract it and add the `bin` folder to your Windows PATH environment variable.
+2.  **Install Prerequisites:**
+    * This project requires **FFmpeg** (for video/audio) and **PortAudio** (for voice recording).
 
+    * **On Windows:**
+        * Download and install FFmpeg from [gyan.dev](https://www.gyan.dev/ffmpeg/builds/) (get the `ffmpeg-release-full.7z` file).
+        * Extract it and add the `bin` folder to your Windows PATH environment variable.
+        * `pyaudio` (for voice) is installed via `pip`, but it may require you to install "Microsoft C++ Build Tools" if it fails.
+
+    * **On Linux (Debian/Ubuntu):**
+        * Run the following command to install both prerequisites from the terminal:
+            ```bash
+            sudo apt-get update && sudo apt-get install -y ffmpeg portaudio19-dev
+            ```
+    * **On macOS:**
+        * Use [Homebrew](https://brew.sh/) to install:
+            ```bash
+            brew install ffmpeg portaudio
+            ```
 3.  **Create and Activate a Virtual Environment:**
     ```bash
     python -m venv venv
