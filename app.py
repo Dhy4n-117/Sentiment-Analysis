@@ -27,7 +27,7 @@ import re
 # Page Configuration
 # ----------------------------
 st.set_page_config(
-    page_title="Advanced Sentiment Analysis",
+    page_title="SentiAI - Advanced Sentiment Analysis",
     page_icon="🧠",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -417,7 +417,6 @@ def transcribe_audio(audio_path: str) -> str:
 # Display Functions
 # ----------------------------
 
-# --- START: NEW HELPER FUNCTION ---
 def create_sentiment_gauge(score, sentiment_label):
     """
     Creates a Plotly gauge chart for the sentiment score.
@@ -461,12 +460,8 @@ def create_sentiment_gauge(score, sentiment_label):
         margin=dict(l=20, r=20, t=50, b=20)
     )
     return fig
-# --- END: NEW HELPER FUNCTION ---
 
 
-# --- START: NEW REPLACEMENT DISPLAY FUNCTION ---
-# --- START: NEW REPLACEMENT DISPLAY FUNCTION (NO TABS) ---
-# This REPLACES the 'show_new_results' function
 def show_new_results(result: Dict, aspects: List[Dict] = None):
     """
     Display analysis results in a new, clean one-page layout (no tabs).
@@ -555,9 +550,8 @@ def show_new_results(result: Dict, aspects: List[Dict] = None):
         st.markdown("*VADER Analysis*")
         st.write(f"- Compound: {result['vader_compound']:.3f}")
         st.write(f"- Positive: {result['vader_pos']:.2%}")
-        st.write(f"- Negative: {result['vader_neg']:.2%}")
-        st.write(f"- Neutral: {result['vader_neu']:.2%}")
-# --- END: NEW REPLACEMENT DISPLAY FUNCTION (NO TABS) ---
+        st.write(f"- Negative: {result['neg_pos']:.2%}")
+        st.write(f"- Neutral: {result['neu_pos']:.2%}")
 
 
 def save_to_history(result: Dict):
@@ -570,6 +564,7 @@ def save_to_history(result: Dict):
 # Sidebar
 # ----------------------------
 with st.sidebar:
+    st.markdown("###Dashboard")
     st.markdown("*Advanced Sentiment Analysis*")
     st.markdown("---")
 
@@ -594,8 +589,7 @@ with st.sidebar:
 # Pages
 # ----------------------------
 if page == "🏠 Home":
-    st.markdown('<div class="hero-title">🧠 SentiAI Platform</div>', unsafe_allow_html=True)
-    st.markdown('<div class="hero-subtitle">Advanced Multi-Modal Sentiment Analysis</div>', unsafe_allow_html=True)
+    st.markdown('<div class="hero-title">Advanced Multi-Modal Sentiment Analysis</div>', unsafe_allow_html=True)
 
     st.markdown("""
     <div class="feature-badges">
@@ -637,9 +631,7 @@ elif page == "🔍 Analyzer":
                         result = analyze_text_comprehensive(text_input)
                         if result:
                             st.success("✅ Complete!")
-                            # --- CHANGED ---
-                            show_new_results(result) # Was display_analysis_results(result)
-                            # --- END CHANGE ---
+                            show_new_results(result)
                             save_to_history(result)
                 else:
                     st.warning("⚠️ Please enter some text")
@@ -671,9 +663,7 @@ elif page == "🔍 Analyzer":
                         st.success(f"✅ Transcribed: {transcript}")
                         result = analyze_text_comprehensive(transcript)
                         if result:
-                            # --- CHANGED ---
-                            show_new_results(result) # Was display_analysis_results(result)
-                            # --- END CHANGE ---
+                            show_new_results(result)
                             save_to_history(result)
                     else:
                         st.error(transcript)
@@ -688,13 +678,11 @@ elif page == "🔍 Analyzer":
                 with st.spinner("Extracting aspects..."):
                     aspects = extract_aspects(aspect_text)
                     overall = analyze_text_comprehensive(aspect_text)
-
-                    # --- CHANGED ---
+                    
                     if overall:
-                        # This one call replaces the two old ones
+                        st.markdown("#### Overall Sentiment")
                         show_new_results(overall, aspects)
                         save_to_history(overall)
-                    # --- END CHANGE ---
             else:
                 st.warning("⚠️ Please enter some text")
 
@@ -721,55 +709,58 @@ elif page == "🎬 Video Analysis":
             with col2:
                 st.info(f"*File:* {uploaded_video.name}")
                 st.info(f"*Size:* {uploaded_video.size / (1024 * 1024):.2f} MB")
+                
+                analyze_button_pressed = st.button("🎬 Analyze Video", use_container_width=True, key="analyze_video_btn")
+            
+            if analyze_button_pressed:
+                try:
+                    os.makedirs("temp_files", exist_ok=True)
+                    tmp_path = os.path.join("temp_files", f"video_{int(time.time())}.mp4")
 
-                if st.button("🎬 Analyze Video", use_container_width=True, key="analyze_video_btn"):
-                    try:
-                        os.makedirs("temp_files", exist_ok=True)
-                        tmp_path = os.path.join("temp_files", f"video_{int(time.time())}.mp4")
+                    with st.spinner("💾 Processing..."):
+                        with open(tmp_path, "wb") as f:
+                            f.write(uploaded_video.read())
 
-                        with st.spinner("💾 Processing..."):
-                            with open(tmp_path, "wb") as f:
-                                f.write(uploaded_video.read())
-
-                        with st.spinner("🎵 Extracting audio..."):
-                            audio_path = extract_audio_from_video(tmp_path)
-                            if audio_path:
-                                st.success("✅ Audio extracted")
-                                st.audio(audio_path)
-
+                    with st.spinner("🎵 Extracting audio..."):
+                        audio_path = extract_audio_from_video(tmp_path)
                         if audio_path:
-                            with st.spinner("📝 Transcribing..."):
-                                transcript = transcribe_audio(audio_path)
+                            st.success("✅ Audio extracted")
+                            st.audio(audio_path)
+                        else:
+                            st.error("Audio extraction failed. Cannot proceed.")
+                            if os.path.exists(tmp_path): os.remove(tmp_path)
+                            st.stop() # Stop the script
 
-                                if not transcript.startswith("❌"):
-                                    st.success("✅ Transcription complete!")
+                    with st.spinner("📝 Transcribing..."):
+                        transcript = transcribe_audio(audio_path)
 
-                                    with st.expander("📄 Transcript", expanded=True):
-                                        st.text_area("", transcript, height=200, key="transcript_display")
-                                        st.download_button(
-                                            "💾 Download",
-                                            transcript,
-                                            f"transcript_{int(time.time())}.txt",
-                                            key="download_transcript"
-                                        )
+                        if not transcript.startswith("❌"):
+                            st.success("✅ Transcription complete!")
 
-                                    result = analyze_text_comprehensive(transcript)
-                                    if result:
-                                        # --- CHANGED ---
-                                        show_new_results(result) # Was display_analysis_results(result)
-                                        # --- END CHANGE ---
-                                        save_to_history(result)
-                                        st.balloons()
-                                else:
-                                    st.error(transcript)
+                            with st.expander("📄 Transcript", expanded=True):
+                                st.text_area("", transcript, height=200, key="transcript_display")
+                                st.download_button(
+                                    "💾 Download",
+                                    transcript,
+                                    f"transcript_{int(time.time())}.txt",
+                                    key="download_transcript"
+                                )
 
-                        # Cleanup
-                        for f in [tmp_path, audio_path]:
-                            if f and os.path.exists(f):
-                                os.remove(f)
+                            result = analyze_text_comprehensive(transcript)
+                            if result:
+                                show_new_results(result) 
+                                save_to_history(result)
+                                st.balloons()
+                        else:
+                            st.error(transcript)
 
-                    except Exception as e:
-                        st.error(f"❌ Error: {str(e)}")
+                    # Cleanup
+                    for f in [tmp_path, audio_path]:
+                        if f and os.path.exists(f):
+                            os.remove(f)
+
+                except Exception as e:
+                    st.error(f"❌ Error: {str(e)}")
 
     with tab2:
         st.info("🔗 Try YouTube direct download - Multiple methods will be attempted")
@@ -857,9 +848,7 @@ elif page == "🎬 Video Analysis":
                                                 result = analyze_text_comprehensive(transcript)
                                                 if result:
                                                     st.success("✅ Analysis complete!")
-                                                    # --- CHANGED ---
-                                                    show_new_results(result) # Was display_analysis_results(result)
-                                                    # --- END CHANGE ---
+                                                    show_new_results(result)
                                                     save_to_history(result)
                                                 else:
                                                     st.error(transcript)
@@ -980,7 +969,3 @@ elif page == "ℹ️ About":
     """)
 
     st.success("✅ All features working perfectly!")
-
-
-
-
