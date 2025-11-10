@@ -253,7 +253,7 @@ def show_new_results(result: Dict, aspects: List[Dict] = None):
         st.error(f"Could not generate sentiment gauge: {e}")
         st.markdown(f"""
         <div class="sentiment-card">
-            <div class="sentiment-score">{result['combined_score']:.2f}</div>
+            <div class.sentiment-score">{result['combined_score']:.2f}</div>
             <div class="sentiment-label">{result['final_sentiment']}</div>
         </div>
         """, unsafe_allow_html=True)
@@ -436,17 +436,19 @@ elif st.session_state.page == "🔍 Analyzer":
         else:
             st.info("🎤 Click to record your voice")
             if st.button("🎙️ Start Recording", use_container_width=True, key="record_btn"):
-                with st.spinner("Recording..."):
-                    transcript = recognize_speech()
-                    if not transcript.startswith("❌"):
-                        st.success(f"✅ Transcribed: {transcript}")
-                        with st.spinner("🔄 Analyzing..."):
-                            result = analyze_text_comprehensive(transcript, bert_analyzer, vader_analyzer)
-                            if result:
-                                show_new_results(result)
-                                save_to_history(result)
-                    else:
-                        st.error(transcript)
+                # Pass the spinner to the function so it can update its text
+                with st.spinner("Initializing..."):
+                    transcript = recognize_speech(st.spinner("Initializing..."))
+
+                if not transcript.startswith("❌"):
+                    st.success(f"✅ Transcribed: {transcript}")
+                    with st.spinner("🔄 Analyzing..."):
+                        result = analyze_text_comprehensive(transcript, bert_analyzer, vader_analyzer)
+                        if result:
+                            show_new_results(result)
+                            save_to_history(result)
+                else:
+                    st.error(transcript)
 
     with tab3:
         st.markdown("### 🎯 Aspect-Based Analysis")
@@ -530,39 +532,44 @@ elif st.session_state.page == "🎬 Video Analysis":
                         with open(tmp_path, "wb") as f:
                             f.write(uploaded_video.read())
 
+                    audio_path = ""  # Initialize
                     with st.spinner("🎵 Extracting audio..."):
                         audio_path = extract_audio_from_video(tmp_path)
-                        if audio_path:
-                            st.success("✅ Audio extracted")
-                            st.audio(audio_path)
-                        else:
-                            st.error("Audio extraction failed. Cannot proceed.")
-                            if os.path.exists(tmp_path): os.remove(tmp_path)
-                            st.stop()
 
+                    if audio_path:
+                        st.success("✅ Audio extracted")
+                        st.audio(audio_path)
+                    else:
+                        st.error("Audio extraction failed. Cannot proceed.")
+                        if os.path.exists(tmp_path): os.remove(tmp_path)
+                        st.stop()
+
+                    transcript = ""  # Initialize
                     with st.spinner("📝 Transcribing..."):
                         transcript = transcribe_audio(audio_path)
 
-                        if not transcript.startswith("❌"):
-                            st.success("✅ Transcription complete!")
+                    if not transcript.startswith("❌"):
+                        st.success("✅ Transcription complete!")
 
-                            with st.expander("📄 Transcript", expanded=True):
-                                st.text_area("", transcript, height=200, key="transcript_display")
-                                st.download_button(
-                                    "💾 Download",
-                                    transcript,
-                                    f"transcript_{int(time.time())}.txt",
-                                    key="download_transcript"
-                                )
+                        with st.expander("📄 Transcript", expanded=True):
+                            st.text_area("", transcript, height=200, key="transcript_display")
+                            st.download_button(
+                                "💾 Download",
+                                transcript,
+                                f"transcript_{int(time.time())}.txt",
+                                key="download_transcript"
+                            )
 
-                            with st.spinner("🔄 Analyzing..."):
-                                result = analyze_text_comprehensive(transcript, bert_analyzer, vader_analyzer)
-                                if result:
-                                    show_new_results(result)
-                                    save_to_history(result)
-                                    st.balloons()
-                        else:
-                            st.error(transcript)
+                        with st.spinner("🔄 Analyzing..."):
+                            result = analyze_text_comprehensive(transcript, bert_analyzer, vader_analyzer)
+                            if result:
+                                show_new_results(result)
+                                save_to_history(result)
+                                st.balloons()
+                            else:
+                                st.error("Could not analyze the transcribed text.")
+                    else:
+                        st.error(transcript)  # Show the error from transcribe_audio
 
                     # Cleanup
                     for f in [tmp_path, audio_path]:
@@ -589,93 +596,95 @@ elif st.session_state.page == "🎬 Video Analysis":
 
         if st.button("🚀 Download & Analyze", use_container_width=True, key="yt_btn"):
             if yt_url:
-                st.info("⏳ Trying multiple download methods... Please wait...")
-
                 try:
+                    video_path = ""  # Initialize
+                    audio_path = ""  # Initialize
+
                     with st.spinner("📥 Downloading (this may take 1-2 minutes)..."):
                         video_path = download_youtube_video(yt_url)
 
-                        if not video_path or not os.path.exists(video_path):
-                            st.error("❌ All download methods failed")
-                            st.markdown("""
-                            ### 😔 YouTube Download Failed
+                    if not video_path or not os.path.exists(video_path):
+                        st.error("❌ All download methods failed")
+                        st.markdown("""
+                        ### 😔 YouTube Download Failed
 
-                            *Why this happens:*
-                            - YouTube actively blocks automated downloads
-                            - Video may be region-restricted
-                            - Copyright protection
-                            - Rate limiting
+                        *Why this happens:*
+                        - YouTube actively blocks automated downloads
+                        - Video may be region-restricted
+                        - Copyright protection
+                        - Rate limiting
 
-                            ### ✅ *What to do now:*
+                        ### ✅ *What to do now:*
 
-                            *Quick Solution (2 minutes):*
-                            1. Go to [Y2Mate.com](https://y2mate.com)
-                            2. Paste your YouTube URL
-                            3. Download the video
-                            4. Use the *"Upload Video"* tab above ⬆️
-                            5. Upload your downloaded file
+                        *Quick Solution (2 minutes):*
+                        1. Go to [Y2Mate.com](https://y2mate.com)
+                        2. Paste your YouTube URL
+                        3. Download the video
+                        4. Use the *"Upload Video"* tab above ⬆️
+                        5. Upload your downloaded file
 
-                            *Or update yt-dlp:*
-                            bash
-                            pip install --upgrade yt-dlp
+                        *Or update yt-dlp:*
+                        bash
+                        pip install --upgrade yt-dlp
 
-                            Then restart the app and try again.
-                            """)
+                        Then restart the app and try again.
+                        """)
+                    else:
+                        st.success(f"✅ Successfully downloaded!")
+                        st.balloons()
+
+                        file_size = os.path.getsize(video_path) / (1024 * 1024)
+                        st.info(f"📊 File size: {file_size:.2f} MB")
+
+                        with st.spinner("🎵 Extracting audio..."):
+                            audio_path = extract_audio_from_video(video_path)
+
+                        if audio_path:
+                            st.success("✅ Audio extracted")
+                            st.audio(audio_path)
+
+                            transcript = ""  # Initialize
+                            with st.spinner("📝 Transcribing... This may take a while..."):
+                                transcript = transcribe_audio(audio_path)
+
+                            if not transcript.startswith("❌"):
+                                st.success("✅ Transcription complete!")
+                                st.balloons()
+
+                                with st.expander("📄 View Full Transcript", expanded=True):
+                                    st.text_area("Transcript", transcript, height=200, key="yt_transcript")
+                                    st.info(
+                                        f"📊 Words: {len(transcript.split())} | Characters: {len(transcript)}")
+
+                                    st.download_button(
+                                        "💾 Download Transcript",
+                                        transcript,
+                                        f"transcript_{int(time.time())}.txt",
+                                        "text/plain",
+                                        key="yt_download_transcript"
+                                    )
+
+                                with st.spinner("🔄 Analyzing sentiment..."):
+                                    result = analyze_text_comprehensive(transcript, bert_analyzer, vader_analyzer)
+                                    if result:
+                                        st.success("✅ Analysis complete!")
+                                        show_new_results(result)
+                                        save_to_history(result)
+                                    else:
+                                        st.error("Could not analyze the transcribed text.")
+                                        st.warning("Video may not contain clear speech")
+                            else:
+                                st.error(transcript)  # Show the error from transcribe_audio
                         else:
-                            st.success(f"✅ Successfully downloaded!")
-                            st.balloons()
+                            st.error("❌ Audio extraction failed")
 
-                            file_size = os.path.getsize(video_path) / (1024 * 1024)
-                            st.info(f"📊 File size: {file_size:.2f} MB")
-
-                            with st.spinner("🎵 Extracting audio..."):
-                                audio_path = extract_audio_from_video(video_path)
-                                if audio_path:
-                                    st.success("✅ Audio extracted")
-                                    st.audio(audio_path)
-
-                                    with st.spinner("📝 Transcribing... This may take a while..."):
-                                        transcript = transcribe_audio(audio_path)
-
-                                        if not transcript.startswith("❌"):
-                                            st.success("✅ Transcription complete!")
-                                            st.balloons()
-
-                                            with st.expander("📄 View Full Transcript", expanded=True):
-                                                st.text_area("Transcript", transcript, height=200, key="yt_transcript")
-                                                st.info(
-                                                    f"📊 Words: {len(transcript.split())} | Characters: {len(transcript)}")
-
-                                                st.download_button(
-                                                    "💾 Download Transcript",
-                                                    transcript,
-                                                    f"transcript_{int(time.time())}.txt",
-                                                    "text/plain",
-                                                    key="yt_download_transcript"
-                                                )
-
-                                            with st.spinner("🔄 Analyzing sentiment..."):
-                                                result = analyze_text_comprehensive(transcript, bert_analyzer,
-                                                                                    vader_analyzer)
-                                                if result:
-                                                    st.success("✅ Analysis complete!")
-                                                    show_new_results(result)
-                                                    save_to_history(result)
-                                                else:
-                                                    st.error(transcript)
-                                                    st.warning("Video may not contain clear speech")
-                                else:
-                                    st.error("❌ Audio extraction failed")
-
-                            # Cleanup
-                            # --- THIS IS THE FIX ---
-                            for f in [video_path, audio_path]:
-                                # --- END OF FIX ---
-                                if f and os.path.exists(f):
-                                    try:
-                                        os.remove(f)
-                                    except:
-                                        pass
+                    # Cleanup
+                    for f in [video_path, audio_path]:
+                        if f and os.path.exists(f):
+                            try:
+                                os.remove(f)
+                            except:
+                                pass
 
                 except Exception as e:
                     st.error(f"❌ Error: {str(e)}")
