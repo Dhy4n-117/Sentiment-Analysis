@@ -26,7 +26,7 @@ from analysis_logic import (
 # ----------------------------
 st.set_page_config(
     page_title="Advanced Sentiment Analysis",
-    page_icon="🧠",
+    page_icon="icon.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -36,10 +36,28 @@ st.set_page_config(
 # ----------------------------
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    @import url('https_//fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
     * { font-family: 'Inter', sans-serif; }
     .main { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #f1f5f9; }
     [data-testid="stSidebar"] { background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); border-right: 1px solid #334155; }
+
+    /* --- ANIMATION KEYFRAMES --- */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    /* --- END ANIMATIONS --- */
 
     [data-testid="stSidebar"] > div:first-child > div:first-child {
         padding-top: 1rem; 
@@ -71,25 +89,32 @@ st.markdown("""
         font-weight: 700;
         color: #A79BFF; /* Main title purple */
         margin-bottom: 1rem;
-        padding-left: 1rem; 
-        text-align: left; 
+        text-align: center; /* Centered */
+        animation: fadeIn 0.8s ease-out; /* Added animation */
     }
     .hero-subtitle {
         font-size: 1.2rem;
         color: #94a3b8;
-        text-align: left; 
-        padding-left: 1.2rem;
+        text-align: center; /* Centered */
         margin-bottom: 2rem;
         margin-top: -1rem; 
+        animation: fadeIn 1s ease-out; /* Added animation */
     }
 
-    .feature-badges { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; margin: 2rem 0; }
+    .feature-badges { 
+        display: flex; 
+        justify-content: center; 
+        gap: 1rem; 
+        flex-wrap: wrap; 
+        margin: 2rem 0; 
+        animation: fadeIn 1.2s ease-out; /* Added animation */
+    }
     .badge { 
-        background: rgba(167, 155, 255, 0.1); /* New purple alpha */
-        border: 1px solid #A79BFF; /* New purple border */
+        background: rgba(167, 155, 255, 0.1); 
+        border: 1px solid #A79BFF; 
         color: #f1f5f9; 
         padding: 0.5rem 1rem; 
-        border-radius: 50px; /* Pill shape */
+        border-radius: 50px; 
         font-size: 0.9rem; 
         font-weight: 500; 
     }
@@ -99,10 +124,10 @@ st.markdown("""
     .sentiment-label { font-size: 1.3rem; text-transform: uppercase; letter-spacing: 2px; }
 
     .stButton>button {
-        background: rgba(167, 155, 255, 0.1); /* New purple alpha */
-        color: #f1f5f9; /* White text */
-        border: 1px solid #A79BFF; /* New purple border */
-        border-radius: 50px; /* Pill shape */
+        background: rgba(167, 155, 255, 0.1); 
+        color: #f1f5f9; 
+        border: 1px solid #A79BFF; 
+        border-radius: 50px; 
         padding: 0.75rem 1.5rem; 
         font-weight: 600; 
         transition: all 0.3s ease; 
@@ -110,10 +135,21 @@ st.markdown("""
     }
     .stButton>button:hover { 
         transform: translateY(-2px); 
-        background: rgba(167, 155, 255, 0.2); /* New purple hover */
-        border-color: #A79BFF; /* New purple hover border */
-        box-shadow: 0 5px 15px rgba(167, 155, 255, 0.2); /* New purple shadow */
+        background: rgba(167, 155, 255, 0.2); 
+        border-color: #A79BFF; 
+        box-shadow: 0 5px 15px rgba(167, 155, 255, 0.2); 
     }
+
+    /* --- CARD CONTAINER STYLE --- */
+    [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlockBorderWrapper"] {
+        background-color: rgba(167, 155, 255, 0.05); 
+        border-color: #A79BFF; 
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        animation: fadeInUp 0.8s ease-out; /* Added animation */
+    }
+    /* --- END CARD STYLE --- */
 
     /* Sidebar radio button styles */
     [data-testid="stRadio"] > div[role="radiogroup"] > label[data-baseweb="radio"] > div:first-child {
@@ -125,14 +161,15 @@ st.markdown("""
         transition: all 0.2s ease-in-out;
         margin-bottom: 5px;
         border: 1px solid transparent;
+        cursor: pointer;
     }
     [data-testid="stRadio"] > div[role="radiogroup"] > label:hover {
-        background-color: rgba(167, 155, 255, 0.1); /* New purple hover */
-        border-color: #A79BFF; /* New purple border */
+        background-color: rgba(167, 155, 255, 0.25); 
+        border-color: #A79BFF; 
     }
     [data-testid="stRadio"] > div[role="radiogroup"] > label[data-checked="true"] {
-        background-color: rgba(167, 155, 255, 0.15); /* New purple selected */
-        border-color: #A79BFF; /* New purple border */
+        background-color: rgba(167, 155, 255, 0.15); 
+        border-color: #A79BFF; 
         font-weight: 600;
         color: #f1f5f9;
     }
@@ -154,8 +191,8 @@ st.markdown("""
 # ----------------------------
 # Load Models
 # ----------------------------
-bert_analyzer, vader_analyzer, nlp_model = load_models()
-if not bert_analyzer:
+bert_analyzer, vader_analyzer, nlp_model, emotion_pipeline, emotion_pipeline_all, whisper_model = load_models()
+if not bert_analyzer or not whisper_model:
     st.error("Fatal Error: Could not load AI models. The app cannot start.")
     st.stop()
 
@@ -240,90 +277,96 @@ def show_new_results(result: Dict, aspects: List[Dict] = None):
 
     if aspects is None:
         with st.spinner("Extracting aspects..."):
-            aspects = extract_aspects(result['text'], nlp_model, bert_analyzer, vader_analyzer)
+            aspects = extract_aspects(result['text'], nlp_model, bert_analyzer, vader_analyzer, emotion_pipeline_all)
 
     st.markdown("---")
     st.markdown("### 📊 Analysis Results")
 
-    st.subheader("📈 Hybrid Sentiment Score")
-    try:
-        fig_gauge = create_sentiment_gauge(result['combined_score'], result['final_sentiment'])
-        st.plotly_chart(fig_gauge, use_container_width=True)
-    except Exception as e:
-        st.error(f"Could not generate sentiment gauge: {e}")
-        st.markdown(f"""
-        <div class="sentiment-card">
-            <div class.sentiment-score">{result['combined_score']:.2f}</div>
-            <div class="sentiment-label">{result['final_sentiment']}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.divider()
-
-    st.subheader("😊 Emotion Analysis")
-    try:
-        emotion_data = {label.title(): score for label, score in result['emotions'].items() if score > 0}
-        if emotion_data:
-            df_emotions = pd.DataFrame(emotion_data.items(), columns=['Emotion', 'Score (%)'])
-            fig = px.bar(df_emotions, x='Emotion', y='Score (%)', color='Emotion',
-                         title="Detected Emotions", text='Score (%)')
-            fig.update_traces(texttemplate='%{text:.0f}%', textposition='outside')
-            fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide', showlegend=False)
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("No distinct emotions detected.")
-    except Exception as e:
-        st.error(f"Could not generate emotion chart: {e}")
-        st.write(result['emotions'])
-
-    st.divider()
-
-    st.subheader("🎯 Aspect-Based Sentiment")
-    if not aspects:
-        st.info("No specific aspects were detected in the text.")
-    else:
-        sentiment_emoji = {'POSITIVE': '😊', 'NEGATIVE': '😞', 'NEUTRAL': '😐'}
-        for aspect in aspects:
-            sentiment_class = f"aspect-{aspect['sentiment'].lower()}"
+    # --- CARD 1: SENTIMENT GAUGE ---
+    with st.container(border=True):
+        st.subheader("📈 Hybrid Sentiment Score")
+        try:
+            fig_gauge = create_sentiment_gauge(result['combined_score'], result['final_sentiment'])
+            st.plotly_chart(fig_gauge, use_container_width=True)
+        except Exception as e:
+            st.error(f"Could not generate sentiment gauge: {e}")
             st.markdown(f"""
-            <div class="aspect-card {sentiment_class}">
-                <strong>📌 {aspect['aspect'].title()}</strong><br>
-                Sentiment: {sentiment_emoji.get(aspect['sentiment'], '😐')} {aspect['sentiment']} (Score: {aspect['score']:.2f})<br>
-                <em>Context: "{aspect['context'][:100]}..."</em>
+            <div class="sentiment-card">
+                <div class="sentiment-score">{result['combined_score']:.2f}</div>
+                <div class="sentiment-label">{result['final_sentiment']}</div>
             </div>
             """, unsafe_allow_html=True)
-            st.write("")
 
-    st.divider()
+    # --- CARD 2: EMOTION ANALYSIS ---
+    with st.container(border=True):
+        st.subheader("😊 Emotion Analysis")
+        try:
+            emotion_data = {label.title(): score for label, score in result['emotions'].items() if
+                            score > 0 and label != 'neutral'}
 
-    st.subheader("🔍 Detailed Breakdown")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Word Count", result['word_count'])
-        st.metric("Confidence", f"{result['confidence']:.2%}")
-    with col2:
-        st.markdown("*BERT Analysis*")
-        st.write(f"- Label: {result['bert_label']}")
+            if emotion_data:
+                df_emotions = pd.DataFrame(emotion_data.items(), columns=['Emotion', 'Score (%)'])
+                fig = px.bar(df_emotions, x='Emotion', y='Score (%)', color='Emotion',
+                             title="Detected Emotions", text='Score (%)')
+                fig.update_traces(texttemplate='%{text:.0f}%', textposition='outside')
 
-        bert_sent = result['bert_sentiment']
-        if bert_sent == 'POSITIVE':
-            st.markdown(f"- Sentiment: <span style='color:#4CAF50; font-weight:bold;'>{bert_sent}</span>",
-                        unsafe_allow_html=True)
-        elif bert_sent == 'NEGATIVE':
-            st.markdown(f"- Sentiment: <span style='color:#F44336; font-weight:bold;'>{bert_sent}</span>",
-                        unsafe_allow_html=True)
-        else:  # NEUTRAL
-            st.markdown(f"- Sentiment: <span style='color:#FBBC05; font-weight:bold;'>{bert_sent}</span>",
-                        unsafe_allow_html=True)
+                fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide', showlegend=False, margin=dict(t=50))
 
-        st.write(f"- Confidence: {result['bert_score']:.2%}")
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("No distinct emotions detected.")
+        except Exception as e:
+            st.error(f"Could not generate emotion chart: {e}")
+            st.write(result['emotions'])
 
-    with col3:
-        st.markdown("*VADER Analysis*")
-        st.write(f"- Compound: {result['vader_compound']:.3f}")
-        st.write(f"- Positive: {result['vader_pos']:.2%}")
-        st.write(f"- Negative: {result['vader_neg']:.2%}")
-        st.write(f"- Neutral: {result['vader_neu']:.2%}")
+    # --- CARD 3: ASPECT-BASED SENTIMENT ---
+    with st.container(border=True):
+        st.subheader("🎯 Aspect-Based Sentiment")
+        if not aspects:
+            st.info("No specific aspects were detected in the text.")
+        else:
+            sentiment_emoji = {'POSITIVE': '😊', 'NEGATIVE': '😞', 'NEUTRAL': '😐'}
+            for aspect in aspects:
+                sentiment_class = f"aspect-{aspect['sentiment'].lower()}"
+                st.markdown(f"""
+                <div class="aspect-card {sentiment_class}">
+                    <strong>📌 {aspect['aspect'].title()}</strong><br>
+                    Sentiment: {sentiment_emoji.get(aspect['sentiment'], '😐')} {aspect['sentiment']} (Score: {aspect['score']:.2f})<br>
+                    <em>Context: "{aspect['context'][:100]}..."</em>
+                </div>
+                """, unsafe_allow_html=True)
+                st.write("")
+
+    # --- CARD 4: DETAILED BREAKDOWN ---
+    with st.container(border=True):
+        st.subheader("🔍 Detailed Breakdown")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Word Count", result['word_count'])
+            st.metric("Confidence", f"{result['confidence']:.2%}")
+        with col2:
+            st.markdown("*BERT Analysis*")
+            st.write(f"- Label: {result['bert_label']}")
+
+            bert_sent = result['bert_sentiment']
+            if bert_sent == 'POSITIVE':
+                st.markdown(f"- Sentiment: <span style='color:#4CAF50; font-weight:bold;'>{bert_sent}</span>",
+                            unsafe_allow_html=True)
+            elif bert_sent == 'NEGATIVE':
+                st.markdown(f"- Sentiment: <span style='color:#F44336; font-weight:bold;'>{bert_sent}</span>",
+                            unsafe_allow_html=True)
+            else:  # NEUTRAL
+                st.markdown(f"- Sentiment: <span style='color:#FBBC05; font-weight:bold;'>{bert_sent}</span>",
+                            unsafe_allow_html=True)
+
+            st.write(f"- Confidence: {result['bert_score']:.2%}")
+
+        with col3:
+            st.markdown("*VADER Analysis*")
+            st.write(f"- Compound: {result['vader_compound']:.3f}")
+            st.write(f"- Positive: {result['vader_pos']:.2%}")
+            st.write(f"- Negative: {result['vader_neg']:.2%}")
+            st.write(f"- Neutral: {result['vader_neu']:.2%}")
 
 
 def save_to_history(result: Dict):
@@ -342,28 +385,28 @@ with st.sidebar:
 
     st.radio(
         "Navigation",
-        ["🏠 Home", "🔍 Analyzer", "🎬 Video Analysis", "🤖 Chatbot", "📚 History", "ℹ️ About"],
+        ["🏠 Home", "📝 Analyzer", "🎬 Video Analysis", "🤖 Chatbot", "📚 History", "ℹ️ About"],
         key="page",
         label_visibility="collapsed"
     )
 
     st.markdown("---")
     st.markdown("### 📊 Quick Stats")
-    st.metric("Total Analyses", len(st.session_state.history))
+    st.metric("📊 Total Analyses", len(st.session_state.history))
 
     if st.session_state.history:
         avg_score = np.mean([h['combined_score'] for h in st.session_state.history])
-        st.metric("Avg Score", f"{avg_score:.2f}")
+        st.metric("📈 Avg Score", f"{avg_score:.2f}")
 
     st.markdown("---")
-    st.caption("Built with 🧠 BERT + VADER • SpaCy")
+    st.caption("Built with BERT + VADER • SpaCy")
 
 # ----------------------------
 # Pages
 # ----------------------------
 
 if st.session_state.page == "🏠 Home":
-    st.markdown('<div class="hero-title">🗨️ Sentiment Analysis Platform</div>', unsafe_allow_html=True)
+    st.markdown('<div class="hero-title">Sentiment Analysis Platform</div>', unsafe_allow_html=True)
     st.markdown('<div class="hero-subtitle">Advanced Multi-Modal Sentiment Analysis</div>', unsafe_allow_html=True)
 
     st.markdown("""
@@ -381,7 +424,7 @@ if st.session_state.page == "🏠 Home":
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.button("📝 Text Analysis", on_click=set_page, args=["🔍 Analyzer"], use_container_width=True)
+        st.button("📝 Text Analysis", on_click=set_page, args=["📝 Analyzer"], use_container_width=True)
         st.markdown("<p style='text-align:center;'>Dual-model AI sentiment detection</p>", unsafe_allow_html=True)
     with col2:
         st.button("🎬 Video Analysis", on_click=set_page, args=["🎬 Video Analysis"], use_container_width=True)
@@ -392,8 +435,8 @@ if st.session_state.page == "🏠 Home":
 
     st.info("👉 Navigate to any section to start analyzing!")
 
-elif st.session_state.page == "🔍 Analyzer":
-    st.markdown("## 🔍 Advanced Sentiment Analyzer")
+elif st.session_state.page == "📝 Analyzer":
+    st.markdown("## 📝 Advanced Sentiment Analyzer")
 
     tab1, tab2, tab3, tab4 = st.tabs(["📝 Text", "🎤 Voice", "🎯 Aspects", "🌐 URL"])
 
@@ -407,7 +450,8 @@ elif st.session_state.page == "🔍 Analyzer":
             if st.button("🚀 Analyze Text", use_container_width=True, key="analyze_text_btn"):
                 if text_input.strip():
                     with st.spinner("🔄 Analyzing..."):
-                        result = analyze_text_comprehensive(text_input, bert_analyzer, vader_analyzer)
+                        result = analyze_text_comprehensive(text_input, bert_analyzer, vader_analyzer,
+                                                            emotion_pipeline_all)
                         if result:
                             st.success("✅ Complete!")
                             show_new_results(result)
@@ -436,14 +480,14 @@ elif st.session_state.page == "🔍 Analyzer":
         else:
             st.info("🎤 Click to record your voice")
             if st.button("🎙️ Start Recording", use_container_width=True, key="record_btn"):
-                # Pass the spinner to the function so it can update its text
                 with st.spinner("Initializing..."):
                     transcript = recognize_speech(st.spinner("Initializing..."))
 
                 if not transcript.startswith("❌"):
                     st.success(f"✅ Transcribed: {transcript}")
                     with st.spinner("🔄 Analyzing..."):
-                        result = analyze_text_comprehensive(transcript, bert_analyzer, vader_analyzer)
+                        result = analyze_text_comprehensive(transcript, bert_analyzer, vader_analyzer,
+                                                            emotion_pipeline_all)
                         if result:
                             show_new_results(result)
                             save_to_history(result)
@@ -458,8 +502,10 @@ elif st.session_state.page == "🔍 Analyzer":
         if st.button("🔍 Analyze Aspects", use_container_width=True, key="aspect_btn"):
             if aspect_text.strip():
                 with st.spinner("Extracting aspects..."):
-                    aspects = extract_aspects(aspect_text, nlp_model, bert_analyzer, vader_analyzer)
-                    overall = analyze_text_comprehensive(aspect_text, bert_analyzer, vader_analyzer)
+                    aspects = extract_aspects(aspect_text, nlp_model, bert_analyzer, vader_analyzer,
+                                              emotion_pipeline_all)
+                    overall = analyze_text_comprehensive(aspect_text, bert_analyzer, vader_analyzer,
+                                                         emotion_pipeline_all)
 
                     if overall:
                         st.markdown("#### Overall Sentiment")
@@ -487,7 +533,8 @@ elif st.session_state.page == "🔍 Analyzer":
                         st.text_area("", scraped_text, height=150)
 
                     with st.spinner("🔄 Analyzing text..."):
-                        result = analyze_text_comprehensive(scraped_text, bert_analyzer, vader_analyzer)
+                        result = analyze_text_comprehensive(scraped_text, bert_analyzer, vader_analyzer,
+                                                            emotion_pipeline_all)
                         if result:
                             st.success("✅ Analysis Complete!")
                             show_new_results(result)
@@ -545,8 +592,8 @@ elif st.session_state.page == "🎬 Video Analysis":
                         st.stop()
 
                     transcript = ""  # Initialize
-                    with st.spinner("📝 Transcribing..."):
-                        transcript = transcribe_audio(audio_path)
+                    with st.spinner("📝 Transcribing with Whisper..."):
+                        transcript = transcribe_audio(audio_path, whisper_model)
 
                     if not transcript.startswith("❌"):
                         st.success("✅ Transcription complete!")
@@ -561,11 +608,13 @@ elif st.session_state.page == "🎬 Video Analysis":
                             )
 
                         with st.spinner("🔄 Analyzing..."):
-                            result = analyze_text_comprehensive(transcript, bert_analyzer, vader_analyzer)
+                            result = analyze_text_comprehensive(transcript, bert_analyzer, vader_analyzer,
+                                                                emotion_pipeline_all)
                             if result:
+                                st.success("✅ Analysis complete!")
                                 show_new_results(result)
                                 save_to_history(result)
-                                st.balloons()
+                                st.toast('Analysis complete!', icon='✅')
                             else:
                                 st.error("Could not analyze the transcribed text.")
                     else:
@@ -591,7 +640,7 @@ elif st.session_state.page == "🎬 Video Analysis":
         """)
 
         yt_url = st.text_input("YouTube URL",
-                               placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                               placeholder="https.://www.youtube.com/watch?v=dQw4w9WgXcQ",
                                key="yt_url")
 
         if st.button("🚀 Download & Analyze", use_container_width=True, key="yt_btn"):
@@ -600,6 +649,7 @@ elif st.session_state.page == "🎬 Video Analysis":
                     video_path = ""  # Initialize
                     audio_path = ""  # Initialize
 
+                    st.info("⏳ Trying multiple download methods... Please wait...")
                     with st.spinner("📥 Downloading (this may take 1-2 minutes)..."):
                         video_path = download_youtube_video(yt_url)
 
@@ -607,31 +657,10 @@ elif st.session_state.page == "🎬 Video Analysis":
                         st.error("❌ All download methods failed")
                         st.markdown("""
                         ### 😔 YouTube Download Failed
-
-                        *Why this happens:*
-                        - YouTube actively blocks automated downloads
-                        - Video may be region-restricted
-                        - Copyright protection
-                        - Rate limiting
-
-                        ### ✅ *What to do now:*
-
-                        *Quick Solution (2 minutes):*
-                        1. Go to [Y2Mate.com](https://y2mate.com)
-                        2. Paste your YouTube URL
-                        3. Download the video
-                        4. Use the *"Upload Video"* tab above ⬆️
-                        5. Upload your downloaded file
-
-                        *Or update yt-dlp:*
-                        bash
-                        pip install --upgrade yt-dlp
-
-                        Then restart the app and try again.
+                        *... (error message content) ...*
                         """)
                     else:
                         st.success(f"✅ Successfully downloaded!")
-                        st.balloons()
 
                         file_size = os.path.getsize(video_path) / (1024 * 1024)
                         st.info(f"📊 File size: {file_size:.2f} MB")
@@ -644,12 +673,11 @@ elif st.session_state.page == "🎬 Video Analysis":
                             st.audio(audio_path)
 
                             transcript = ""  # Initialize
-                            with st.spinner("📝 Transcribing... This may take a while..."):
-                                transcript = transcribe_audio(audio_path)
+                            with st.spinner("📝 Transcribing with Whisper... (This may take a while...)"):
+                                transcript = transcribe_audio(audio_path, whisper_model)
 
                             if not transcript.startswith("❌"):
                                 st.success("✅ Transcription complete!")
-                                st.balloons()
 
                                 with st.expander("📄 View Full Transcript", expanded=True):
                                     st.text_area("Transcript", transcript, height=200, key="yt_transcript")
@@ -665,11 +693,13 @@ elif st.session_state.page == "🎬 Video Analysis":
                                     )
 
                                 with st.spinner("🔄 Analyzing sentiment..."):
-                                    result = analyze_text_comprehensive(transcript, bert_analyzer, vader_analyzer)
+                                    result = analyze_text_comprehensive(transcript, bert_analyzer, vader_analyzer,
+                                                                        emotion_pipeline_all)
                                     if result:
                                         st.success("✅ Analysis complete!")
                                         show_new_results(result)
                                         save_to_history(result)
+                                        st.toast('Analysis complete!', icon='✅')
                                     else:
                                         st.error("Could not analyze the transcribed text.")
                                         st.warning("Video may not contain clear speech")
@@ -709,7 +739,7 @@ elif st.session_state.page == "🤖 Chatbot":
         if st.button("💬 Send", use_container_width=True, key="send_btn"):
             if user_input.strip():
                 st.session_state.chat_history.append({'role': 'user', 'message': user_input})
-                bot_reply = chatbot_response(user_input, bert_analyzer, vader_analyzer)
+                bot_reply = chatbot_response(user_input, bert_analyzer, vader_analyzer, emotion_pipeline)
                 st.session_state.chat_history.append({'role': 'bot', 'message': bot_reply})
                 st.rerun()
 
@@ -719,7 +749,7 @@ elif st.session_state.page == "🤖 Chatbot":
             st.rerun()
 
 elif st.session_state.page == "📚 History":
-    st.markdown("## 📚 Analysis History")
+    st.markdown("## 📚 History")
 
     if not st.session_state.history:
         st.info("No history yet. Start analyzing!")
@@ -752,7 +782,7 @@ elif st.session_state.page == "ℹ️ About":
     st.markdown("## ℹ️ About This Platform")
 
     st.markdown("""
-    ### 🚀 Features
+    ### ✨ Features
 
     1.  ✅ Text Sentiment Analysis (BERT + VADER)
     2.  ✅ Voice Recording & Transcription
@@ -762,34 +792,44 @@ elif st.session_state.page == "ℹ️ About":
     6.  ✅ AI Chatbot with Emotion Detection
     7.  ✅ Analysis History & Export
     8.  ✅ Webpage URL Scraping & Analysis
+    """)
 
-    ### 📦 Installation
-    ```bash
-    # Install main libraries
-    pip install "numpy<2.0" protobuf==3.20.3
-    pip install torch transformers streamlit vaderSentiment
+    with st.expander("🛠️ Installation"):
+        st.markdown("""
+        ```bash
+        # Install main libraries
+        pip install "numpy<2.0" protobuf==3.20.3
+        pip install torch transformers streamlit vaderSentiment
+        pip install scikit-learn 
 
-    # Install audio/video libraries
-    pip install SpeechRecognition pydub opencv-python
+        # Install audio/video libraries
+        pip install SpeechRecognition pydub opencv-python
+        pip install openai-whisper
 
-    # Install web/data libraries
-    pip install yt-dlp spacy plotly pandas
-    pip install requests beautifulsoup4
+        # Install web/data libraries
+        pip install yt-dlp spacy plotly pandas
+        pip install requests beautifulsoup4
 
-    # Download NLP model
-    python -m spacy download en_core_web_sm
-    ```
+        # Download NLP model
+        python -m spacy download en_core_web_sm
+        ```
+        """)
 
-    ### 🚀 Run
-    ```bash
-    streamlit run app.py
-    ```
+    with st.expander("🚀 Run"):
+        st.markdown("""
+        ```bash
+        streamlit run app.py
+        ```
+        """)
 
+    st.markdown("""
     ### 🎯 How It Works
 
     -   *BERT* (60%): Deep contextual understanding
     -   *VADER* (40%): Lexicon-based analysis
     -   *Combined*: Weighted average with confidence metrics
+    -   *Emotion AI*: A dedicated RoBERTa-based model for accurate emotion detection.
+    -   *Transcription*: OpenAI's **Whisper** model for SOTA speech-to-text.
 
     ### 👥 Project
 
