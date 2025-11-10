@@ -24,3 +24,6 @@ pandas>=2.0.0
 # Webpage Analysis
 requests
 beautifulsoup4
+
+#
+scikit-learn
