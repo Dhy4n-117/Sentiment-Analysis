@@ -10,45 +10,63 @@ from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassifica
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from datetime import datetime
 from typing import Dict, List
-import streamlit as st  # <-- This is now added and needed
+import streamlit as st
 import requests
 from bs4 import BeautifulSoup
-
-
-# ----------------------------
+import whisper
+ ----------------------------
 # Load Models
 # ----------------------------
 @st.cache_resource
 def load_models():
     """Load all required models"""
     try:
+        # 1. BERT Sentiment Model
         model_name = "nlptown/bert-base-multilingual-uncased-sentiment"
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         model = AutoModelForSequenceClassification.from_pretrained(model_name)
         bert_pipeline = pipeline("sentiment-analysis", model=model, tokenizer=tokenizer)
+
+        # 2. VADER Sentiment Model
         vader = SentimentIntensityAnalyzer()
 
+        # 3. SpaCy NLP Model
         try:
             nlp = spacy.load("en_core_web_sm")
         except:
             os.system("python -m spacy download en_core_web_sm")
             nlp = spacy.load("en_core_web_sm")
 
-        return bert_pipeline, vader, nlp
+        # 4. Emotion Model (for chatbot)
+        emotion_pipeline = pipeline("text-classification",
+                                    model="j-hartmann/emotion-english-distilroberta-base",
+                                    return_all_scores=False)
+
+        # 5. Emotion Model (for charts)
+        emotion_pipeline_all = pipeline("text-classification",
+                                        model="j-hartmann/emotion-english-distilroberta-base",
+                                        return_all_scores=True)
+
+        # 6. NEW: Whisper Transcription Model
+        whisper_model = whisper.load_model("medium")  # "tiny", "base", "small", "medium", "large"
+
+        return bert_pipeline, vader, nlp, emotion_pipeline, emotion_pipeline_all, whisper_model
+
     except Exception as e:
         print(f"Error loading models: {str(e)}")
-        return None, None, None
+        return None, None, None, None, None, None
 
 
 # ----------------------------
 # Analysis Functions
 # ----------------------------
-def analyze_text_comprehensive(text: str, bert_analyzer, vader_analyzer) -> Dict:
+def analyze_text_comprehensive(text: str, bert_analyzer, vader_analyzer, emotion_pipeline_all) -> Dict:
     """Comprehensive sentiment analysis"""
     if not text or not text.strip():
         return None
 
     try:
+        # --- 1. BERT Analysis (for 60% of score) ---
         bert_result = bert_analyzer(text[:512])[0]
         bert_label = bert_result['label']
         bert_score = float(bert_result['score'])
@@ -63,6 +81,7 @@ def analyze_text_comprehensive(text: str, bert_analyzer, vader_analyzer) -> Dict
             bert_sentiment = 'NEGATIVE'
             bert_normalized = bert_score * 0.4
 
+        # --- 2. VADER Analysis (for 40% of score) ---
         vader_scores = vader_analyzer.polarity_scores(text)
         vader_compound = vader_scores['compound']
 
@@ -74,6 +93,9 @@ def analyze_text_comprehensive(text: str, bert_analyzer, vader_analyzer) -> Dict
             vader_sentiment = 'NEUTRAL'
 
         vader_normalized = (vader_compound + 1) / 2
+
+        # --- 3. Hybrid Score (60% BERT + 40% VADER) ---
+        # THIS REMAINS UNCHANGED
         combined_score = (bert_normalized * 0.6) + (vader_normalized * 0.4)
 
         if combined_score >= 0.6:
@@ -83,14 +105,9 @@ def analyze_text_comprehensive(text: str, bert_analyzer, vader_analyzer) -> Dict
         else:
             final_sentiment = 'NEUTRAL'
 
-        emotions = {
-            'joy': max(0, vader_scores['pos'] * 100),
-            'sadness': max(0, vader_scores['neg'] * 100),
-            'anger': max(0, (vader_scores['neg'] * 0.7) * 100),
-            'fear': max(0, (vader_scores['neg'] * 0.3) * 100),
-            'surprise': abs(vader_scores['neu'] * 50),
-            'trust': max(0, vader_scores['pos'] * 80)
-        }
+        # --- 4. NEW: Emotion Analysis ---
+        emotion_results = emotion_pipeline_all(text[:512])[0]
+        emotions = {e['label']: e['score'] * 100 for e in emotion_results}
 
         confidence = (bert_score + abs(vader_compound)) / 2
 
@@ -116,7 +133,7 @@ def analyze_text_comprehensive(text: str, bert_analyzer, vader_analyzer) -> Dict
         return None
 
 
-def extract_aspects(text: str, nlp_model, bert_analyzer, vader_analyzer) -> List[Dict]:
+def extract_aspects(text: str, nlp_model, bert_analyzer, vader_analyzer, emotion_pipeline_all) -> List[Dict]:
     """Extract aspects and sentiments"""
     if not nlp_model:
         return []
@@ -130,7 +147,7 @@ def extract_aspects(text: str, nlp_model, bert_analyzer, vader_analyzer) -> List
         end_idx = min(len(doc), chunk.end + 5)
         context = doc[start_idx:end_idx].text
 
-        sentiment_result = analyze_text_comprehensive(context, bert_analyzer, vader_analyzer)
+        sentiment_result = analyze_text_comprehensive(context, bert_analyzer, vader_analyzer, emotion_pipeline_all)
 
         if sentiment_result:
             aspects.append({
@@ -153,89 +170,70 @@ def extract_aspects(text: str, nlp_model, bert_analyzer, vader_analyzer) -> List
 def download_youtube_video(url: str, output_path: str = "temp_yt_video.mp4") -> str:
     """Download YouTube video. Returns the path or None if all methods fail."""
 
-    # Method 1: Try with cookies and authentication
+    # Method 1
     try:
         ydl_opts = {
-            'format': 'bestaudio[ext=m4a]/bestaudio/best',
-            'outtmpl': output_path,
-            'quiet': True,
-            'no_warnings': True,
+            'format': 'bestaudio[ext=m4a]/bestaudio/best', 'outtmpl': output_path, 'quiet': True, 'no_warnings': True,
             'nocheckcertificate': True,
             'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'referer': 'https://www.youtube.com/',
-            'extractor_args': {'youtube': {'player_client': ['android', 'web']}},
-            'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,/;q=0.8',
-                'Accept-Language': 'en-us,en;q=0.5',
-                'Sec-Fetch-Mode': 'navigate',
-            }
+            'referer': 'https://www.youtube.com/', 'extractor_args': {'youtube': {'player_client': ['android', 'web']}},
+            'http_headers': {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,/;q=0.8',
+                             'Accept-Language': 'en-us,en;q=0.5', 'Sec-Fetch-Mode': 'navigate'}
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            if info and os.path.exists(output_path):
-                return output_path
+            ydl.extract_info(url, download=True)
+            if os.path.exists(output_path): return output_path
     except Exception as e:
         print(f"YT Download Method 1 failed: {e}")
 
-    # Method 2: Try audio only with different format
+    # Method 2
     try:
         output_path2 = "temp_yt_audio.m4a"
         ydl_opts = {
-            'format': 'bestaudio/best',
-            'outtmpl': output_path2,
-            'quiet': True,
-            'no_warnings': True,
+            'format': 'bestaudio/best', 'outtmpl': output_path2, 'quiet': True, 'no_warnings': True,
             'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'}],
-            'prefer_ffmpeg': True,
-            'keepvideo': False,
-            'user_agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
+            'prefer_ffmpeg': True, 'keepvideo': False,
+            'user_agent': 'Mozilla/5.o (X11; Linux x86_64) AppleWebKit/537.36'
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            possible_outputs = [output_path2, output_path2.replace('.m4a', '.mp3')]
-            for path in possible_outputs:
-                if os.path.exists(path):
-                    return path
+            ydl.extract_info(url, download=True)
+            for path in [output_path2, output_path2.replace('.m4a', '.mp3')]:
+                if os.path.exists(path): return path
     except Exception as e:
         print(f"YT Download Method 2 failed: {e}")
 
-    # Method 3: Try with alternate client
+    # Method 3
     try:
         ydl_opts = {
-            'format': 'worstaudio/worst',
-            'outtmpl': output_path,
-            'quiet': True,
-            'extractor_args': {'youtube': {'player_client': ['android'], 'skip': ['hls', 'dash']}},
+            'format': 'worstaudio/worst', 'outtmpl': output_path, 'quiet': True,
+            'extractor_args': {'youtube': {'player_client': ['android'], 'skip': ['hls', 'dash']}}
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            if info and os.path.exists(output_path):
-                return output_path
+            ydl.extract_info(url, download=True)
+            if os.path.exists(output_path): return output_path
     except Exception as e:
         print(f"YT Download Method 3 failed: {e}")
 
-    # Method 4: Try with minimal options
+    # Method 4
     try:
-        ydl_opts = {
-            'format': 'best',
-            'outtmpl': output_path,
-            'quiet': True,
-            'no_warnings': True,
-        }
+        ydl_opts = {'format': 'best', 'outtmpl': output_path, 'quiet': True, 'no_warnings': True}
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            if info and os.path.exists(output_path):
-                return output_path
+            ydl.extract_info(url, download=True)
+            if os.path.exists(output_path): return output_path
     except Exception as e:
         print(f"YT Download Method 4 failed: {e}")
 
     return None
 
 
-def chatbot_response(user_message: str, bert_analyzer, vader_analyzer) -> str:
+def chatbot_response(user_message: str, bert_analyzer, vader_analyzer, emotion_pipeline) -> str:
     """Generate sentiment-aware response"""
-    analysis = analyze_text_comprehensive(user_message, bert_analyzer, vader_analyzer)
+
+    # Create a dummy emotion_pipeline_all to pass to the comprehensive function
+    # This is a small hack to reuse the function without loading the all_scores model
+    dummy_all_pipeline = lambda x: [[{'label': 'neutral', 'score': 1.0}]]
+    analysis = analyze_text_comprehensive(user_message, bert_analyzer, vader_analyzer, dummy_all_pipeline)
 
     if not analysis:
         return "I couldn't analyze that. Could you rephrase?"
@@ -244,36 +242,35 @@ def chatbot_response(user_message: str, bert_analyzer, vader_analyzer) -> str:
     score = analysis['combined_score']
 
     if sentiment == 'POSITIVE':
-        responses = [
-            f"I'm glad to hear positive thoughts! Score: {score:.2f} 😊",
-            f"Your positivity is contagious! (Sentiment: {score:.2f})",
-            f"Great perspective! Score: {score:.2f} ✨"
-        ]
+        responses = [f"I'm glad to hear positive thoughts! Score: {score:.2f} 😊",
+                     f"Your positivity is contagious! (Sentiment: {score:.2f})",
+                     f"Great perspective! Score: {score:.2f} ✨"]
     elif sentiment == 'NEGATIVE':
-        responses = [
-            f"I sense concern (score: {score:.2f}). I'm here to help 💙",
-            f"Seems a bit down (score: {score:.2f}). How can I help?",
-            f"Negative sentiment detected ({score:.2f}). Let's work through it 🤝"
-        ]
+        responses = [f"I sense concern (score: {score:.2f}). I'm here to help 💙",
+                     f"Seems a bit down (score: {score:.2f}). How can I help?",
+                     f"Negative sentiment detected ({score:.2f}). Let's work through it 🤝"]
     else:
-        responses = [
-            f"Neutral sentiment (score: {score:.2f}). What would you like to explore?",
-            f"I understand (Sentiment: {score:.2f}). How can I assist?",
-            f"Balanced message ({score:.2f}). What's next? 🤔"
-        ]
+        responses = [f"Neutral sentiment (score: {score:.2f}). What would you like to explore?",
+                     f"I understand (Sentiment: {score:.2f}). How can I assist?",
+                     f"Balanced message ({score:.2f}). What's next? 🤔"]
 
     import random
     response = random.choice(responses)
 
-    dominant_emotion = max(analysis['emotions'], key=analysis['emotions'].get)
-    emotion_emoji = {'joy': '😊', 'sadness': '😢', 'anger': '😠', 'fear': '😨', 'surprise': '😲', 'trust': '🤝'}
-    response += f"\n\nDominant emotion: {dominant_emotion.title()} {emotion_emoji.get(dominant_emotion, '😐')}"
+    dominant_emotion_result = emotion_pipeline(user_message)[0]
+    dominant_emotion = dominant_emotion_result['label']
+    emotion_score = dominant_emotion_result['score']
+
+    emotion_emoji = {'joy': '😊', 'sadness': '😢', 'anger': '😠', 'fear': '😨', 'surprise': '😲', 'neutral': '😐',
+                     'disgust': '🤢'}
+    response += f"\n\nDominant emotion: {dominant_emotion.title()} {emotion_emoji.get(dominant_emotion, '😐')} ({emotion_score:.0%})"
 
     return response
 
 
-def recognize_speech(spinner) -> str:
-    """Speech recognition"""
+# --- UPDATED FUNCTION ---
+def recognize_speech(spinner, whisper_model) -> str:
+    """Speech recognition using Whisper"""
     try:
         import pyaudio
     except ImportError:
@@ -282,12 +279,27 @@ def recognize_speech(spinner) -> str:
     r = sr.Recognizer()
     try:
         with sr.Microphone() as source:
-            spinner.text = "🎤 Listening..."  # Update spinner text
+            spinner.text = "🎤 Listening..."
             r.adjust_for_ambient_noise(source, duration=1)
             audio = r.listen(source, timeout=10, phrase_time_limit=15)
-        spinner.text = "Transcribing..."  # Update spinner text
-        return r.recognize_google(audio)
+
+        spinner.text = "Saving audio..."
+        with open("temp_mic_audio.wav", "wb") as f:
+            f.write(audio.get_wav_data())
+
+        spinner.text = "Transcribing with Whisper..."
+        # Use fp16=False if running on CPU
+        result = whisper_model.transcribe("temp_mic_audio.wav", fp16=False)
+        os.remove("temp_mic_audio.wav")  # Clean up
+
+        transcript = result["text"]
+        if not transcript:
+            return "❌ Could not transcribe (no speech detected)."
+        return transcript
+
     except Exception as e:
+        if "temp_mic_audio.wav" in locals() and os.path.exists("temp_mic_audio.wav"):
+            os.remove("temp_mic_audio.wav")
         return f"❌ Error: {str(e)}"
 
 
@@ -304,44 +316,27 @@ def extract_audio_from_video(video_file_path: str) -> str:
         return None
 
 
-def transcribe_audio(audio_path: str) -> str:
-    """Transcribe audio"""
-    r = sr.Recognizer()
+# --- UPDATED FUNCTION ---
+def transcribe_audio(audio_path: str, whisper_model) -> str:
+    """Transcribe audio using Whisper"""
     try:
-        audio = AudioSegment.from_file(audio_path)
-        chunk_length_ms = 30000
-        chunks = [audio[i:i + chunk_length_ms] for i in range(0, len(audio), chunk_length_ms)]
+        spinner_text = "Transcribing with Whisper... (This may take a moment)"
+        st.spinner(spinner_text)  # Use st.spinner here as we can't pass it
 
-        full_transcript = []
-        for idx, chunk in enumerate(chunks):
-            chunk_path = f"temp_chunk_{idx}.wav"
-            chunk.export(chunk_path, format="wav")
+        # Use fp16=False if running on CPU
+        result = whisper_model.transcribe(audio_path, fp16=False)
 
-            try:
-                with sr.AudioFile(chunk_path) as source:
-                    r.adjust_for_ambient_noise(source, duration=0.5)
-                    audio_data = r.record(source)
-                text = r.recognize_google(audio_data, language='en-US')
-                if text:
-                    full_transcript.append(text)
-                if os.path.exists(chunk_path):
-                    os.remove(chunk_path)
-            except sr.UnknownValueError:
-                # This is not an error, just no speech found in this chunk
-                continue
-            except Exception as e:
-                print(f"Transcription chunk failed: {e}")
-                continue
-
-        return " ".join(full_transcript) if full_transcript else "❌ Could not transcribe (no speech detected)."
+        transcript = result["text"]
+        if not transcript:
+            return "❌ Could not transcribe (no speech detected)."
+        return transcript
     except Exception as e:
-        return f"❌ Error processing audio file: {str(e)}"
+        return f"❌ Error during transcription: {str(e)}"
 
 
 def scrape_webpage_text(url: str) -> str:
     """Scrape text from a webpage URL."""
     try:
-        # Add 'http' if missing for requests
         if not url.startswith('http'):
             url = 'https://' + url
 
@@ -349,23 +344,19 @@ def scrape_webpage_text(url: str) -> str:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
         response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()  # Raise error for bad responses (4xx, 5xx)
+        response.raise_for_status()
 
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        # Get text from all paragraphs, main articles, and headers
         text_elements = soup.find_all(['p', 'h1', 'h2', 'h3', 'article'])
 
         if not text_elements:
-            # Fallback: get all text from body
             text_elements = soup.find('body')
             if not text_elements:
                 return "❌ Error: Could not find any text content on this page."
 
         full_text = ' '.join(elem.get_text(separator=' ', strip=True) for elem in text_elements)
-
-        # Basic cleanup
-        full_text = re.sub(r'\s+', ' ', full_text)  # Remove extra whitespace
+        full_text = re.sub(r'\s+', ' ', full_text)
 
         return full_text
 
