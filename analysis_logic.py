@@ -5,14 +5,15 @@ import yt_dlp
 import spacy
 import torch
 import speech_recognition as sr
-import requests
-import streamlit as st
-from bs4 import BeautifulSoup
 from pydub import AudioSegment
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from datetime import datetime
 from typing import Dict, List
+import streamlit as st  # <-- This is now added and needed
+import requests
+from bs4 import BeautifulSoup
+
 
 # ----------------------------
 # Load Models
@@ -35,9 +36,9 @@ def load_models():
 
         return bert_pipeline, vader, nlp
     except Exception as e:
-        # We can't use st.error here, so we'll print and return None
         print(f"Error loading models: {str(e)}")
         return None, None, None
+
 
 # ----------------------------
 # Analysis Functions
@@ -150,15 +151,15 @@ def extract_aspects(text: str, nlp_model, bert_analyzer, vader_analyzer) -> List
 
 
 def download_youtube_video(url: str, output_path: str = "temp_yt_video.mp4") -> str:
-    """Download YouTube video with multiple fallback methods"""
+    """Download YouTube video. Returns the path or None if all methods fail."""
 
     # Method 1: Try with cookies and authentication
     try:
         ydl_opts = {
             'format': 'bestaudio[ext=m4a]/bestaudio/best',
             'outtmpl': output_path,
-            'quiet': False,
-            'no_warnings': False,
+            'quiet': True,
+            'no_warnings': True,
             'nocheckcertificate': True,
             'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'referer': 'https://www.youtube.com/',
@@ -170,7 +171,6 @@ def download_youtube_video(url: str, output_path: str = "temp_yt_video.mp4") -> 
                 'Sec-Fetch-Mode': 'navigate',
             }
         }
-
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             if info and os.path.exists(output_path):
@@ -184,15 +184,13 @@ def download_youtube_video(url: str, output_path: str = "temp_yt_video.mp4") -> 
         ydl_opts = {
             'format': 'bestaudio/best',
             'outtmpl': output_path2,
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-            }],
+            'quiet': True,
+            'no_warnings': True,
+            'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'}],
             'prefer_ffmpeg': True,
             'keepvideo': False,
             'user_agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
         }
-
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             possible_outputs = [output_path2, output_path2.replace('.m4a', '.mp3')]
@@ -208,14 +206,8 @@ def download_youtube_video(url: str, output_path: str = "temp_yt_video.mp4") -> 
             'format': 'worstaudio/worst',
             'outtmpl': output_path,
             'quiet': True,
-            'extractor_args': {
-                'youtube': {
-                    'player_client': ['android'],
-                    'skip': ['hls', 'dash']
-                }
-            },
+            'extractor_args': {'youtube': {'player_client': ['android'], 'skip': ['hls', 'dash']}},
         }
-
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             if info and os.path.exists(output_path):
@@ -228,8 +220,9 @@ def download_youtube_video(url: str, output_path: str = "temp_yt_video.mp4") -> 
         ydl_opts = {
             'format': 'best',
             'outtmpl': output_path,
+            'quiet': True,
+            'no_warnings': True,
         }
-
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             if info and os.path.exists(output_path):
@@ -279,7 +272,7 @@ def chatbot_response(user_message: str, bert_analyzer, vader_analyzer) -> str:
     return response
 
 
-def recognize_speech() -> str:
+def recognize_speech(spinner) -> str:
     """Speech recognition"""
     try:
         import pyaudio
@@ -289,8 +282,10 @@ def recognize_speech() -> str:
     r = sr.Recognizer()
     try:
         with sr.Microphone() as source:
+            spinner.text = "🎤 Listening..."  # Update spinner text
             r.adjust_for_ambient_noise(source, duration=1)
             audio = r.listen(source, timeout=10, phrase_time_limit=15)
+        spinner.text = "Transcribing..."  # Update spinner text
         return r.recognize_google(audio)
     except Exception as e:
         return f"❌ Error: {str(e)}"
@@ -331,12 +326,17 @@ def transcribe_audio(audio_path: str) -> str:
                     full_transcript.append(text)
                 if os.path.exists(chunk_path):
                     os.remove(chunk_path)
-            except:
+            except sr.UnknownValueError:
+                # This is not an error, just no speech found in this chunk
+                continue
+            except Exception as e:
+                print(f"Transcription chunk failed: {e}")
                 continue
 
-        return " ".join(full_transcript) if full_transcript else "❌ Could not transcribe"
+        return " ".join(full_transcript) if full_transcript else "❌ Could not transcribe (no speech detected)."
     except Exception as e:
-        return f"❌ Error: {str(e)}"
+        return f"❌ Error processing audio file: {str(e)}"
+
 
 def scrape_webpage_text(url: str) -> str:
     """Scrape text from a webpage URL."""
@@ -349,7 +349,7 @@ def scrape_webpage_text(url: str) -> str:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
         response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status() # Raise error for bad responses (4xx, 5xx)
+        response.raise_for_status()  # Raise error for bad responses (4xx, 5xx)
 
         soup = BeautifulSoup(response.text, 'html.parser')
 
@@ -365,7 +365,7 @@ def scrape_webpage_text(url: str) -> str:
         full_text = ' '.join(elem.get_text(separator=' ', strip=True) for elem in text_elements)
 
         # Basic cleanup
-        full_text = re.sub(r'\s+', ' ', full_text) # Remove extra whitespace
+        full_text = re.sub(r'\s+', ' ', full_text)  # Remove extra whitespace
 
         return full_text
 
