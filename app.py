@@ -8,7 +8,7 @@ import time
 import os
 from typing import Dict, List
 
-# Import all logic functions
+# Import all our logic functions from the new file
 from analysis_logic import (
     load_models,
     analyze_text_comprehensive,
@@ -40,15 +40,103 @@ st.markdown("""
     * { font-family: 'Inter', sans-serif; }
     .main { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #f1f5f9; }
     [data-testid="stSidebar"] { background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); border-right: 1px solid #334155; }
-    .hero-title { font-size: 3.5rem; font-weight: 800; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem; text-align: center; }
-    .hero-subtitle { font-size: 1.2rem; color: #94a3b8; text-align: center; margin-bottom: 2rem; }
+
+    [data-testid="stSidebar"] > div:first-child > div:first-child {
+        padding-top: 1rem; 
+    }
+    [data-testid="stSidebar"] > div:first-child > div:first-child > div:nth-child(1) h3 {
+        font-family: 'Inter', sans-serif;
+        font-weight: 700; 
+        font-size: 1.75rem; 
+        letter-spacing: -0.5px;
+        color: #f1f5f9; 
+        padding-top: 0;
+        margin-top: 0;
+    }
+    [data-testid="stSidebar"] > div:first-child > div:first-child > div:nth-child(1) p {
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        font-size: 1rem;
+        color: #94a3b8; 
+        margin-top: -10px; 
+        margin-bottom: 20px; 
+    }
+    [data-testid="stSidebar"] hr {
+        margin-top: 0;
+        margin-bottom: 20px;
+    }
+
+    .hero-title {
+        font-size: 3.0rem; 
+        font-weight: 700;
+        color: #A79BFF; /* Main title purple */
+        margin-bottom: 1rem;
+        padding-left: 1rem; 
+        text-align: left; 
+    }
+    .hero-subtitle {
+        font-size: 1.2rem;
+        color: #94a3b8;
+        text-align: left; 
+        padding-left: 1.2rem;
+        margin-bottom: 2rem;
+        margin-top: -1rem; 
+    }
+
     .feature-badges { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; margin: 2rem 0; }
-    .badge { background: rgba(99, 102, 241, 0.1); border: 1px solid #6366f1; color: #6366f1; padding: 0.5rem 1rem; border-radius: 50px; font-size: 0.9rem; font-weight: 500; }
+    .badge { 
+        background: rgba(167, 155, 255, 0.1); /* New purple alpha */
+        border: 1px solid #A79BFF; /* New purple border */
+        color: #f1f5f9; 
+        padding: 0.5rem 1rem; 
+        border-radius: 50px; /* Pill shape */
+        font-size: 0.9rem; 
+        font-weight: 500; 
+    }
+
     .sentiment-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 2rem; text-align: center; color: white; margin: 1rem 0; }
     .sentiment-score { font-size: 3rem; font-weight: 800; margin-bottom: 0.5rem; }
     .sentiment-label { font-size: 1.3rem; text-transform: uppercase; letter-spacing: 2px; }
-    .stButton>button { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; border-radius: 8px; padding: 0.75rem 1.5rem; font-weight: 600; transition: all 0.3s ease; width: 100%; }
-    .stButton>button:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3); }
+
+    .stButton>button {
+        background: rgba(167, 155, 255, 0.1); /* New purple alpha */
+        color: #f1f5f9; /* White text */
+        border: 1px solid #A79BFF; /* New purple border */
+        border-radius: 50px; /* Pill shape */
+        padding: 0.75rem 1.5rem; 
+        font-weight: 600; 
+        transition: all 0.3s ease; 
+        width: 100%; 
+    }
+    .stButton>button:hover { 
+        transform: translateY(-2px); 
+        background: rgba(167, 155, 255, 0.2); /* New purple hover */
+        border-color: #A79BFF; /* New purple hover border */
+        box-shadow: 0 5px 15px rgba(167, 155, 255, 0.2); /* New purple shadow */
+    }
+
+    /* Sidebar radio button styles */
+    [data-testid="stRadio"] > div[role="radiogroup"] > label[data-baseweb="radio"] > div:first-child {
+        display: none;
+    }
+    [data-testid="stRadio"] > div[role="radiogroup"] > label {
+        padding: 10px 12px;
+        border-radius: 8px;
+        transition: all 0.2s ease-in-out;
+        margin-bottom: 5px;
+        border: 1px solid transparent;
+    }
+    [data-testid="stRadio"] > div[role="radiogroup"] > label:hover {
+        background-color: rgba(167, 155, 255, 0.1); /* New purple hover */
+        border-color: #A79BFF; /* New purple border */
+    }
+    [data-testid="stRadio"] > div[role="radiogroup"] > label[data-checked="true"] {
+        background-color: rgba(167, 155, 255, 0.15); /* New purple selected */
+        border-color: #A79BFF; /* New purple border */
+        font-weight: 600;
+        color: #f1f5f9;
+    }
+
     .emotion-card { background: rgba(15, 23, 42, 0.5); border-radius: 12px; padding: 1.5rem; text-align: center; border: 1px solid #334155; margin: 0.5rem; }
     .emotion-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
     .emotion-name { font-weight: 600; color: #f1f5f9; margin-bottom: 0.5rem; }
@@ -66,7 +154,6 @@ st.markdown("""
 # ----------------------------
 # Load Models
 # ----------------------------
-# We now load models from our logic file
 bert_analyzer, vader_analyzer, nlp_model = load_models()
 if not bert_analyzer:
     st.error("Fatal Error: Could not load AI models. The app cannot start.")
@@ -79,6 +166,15 @@ if "history" not in st.session_state:
     st.session_state.history = []
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
+if "page" not in st.session_state:
+    st.session_state.page = "🏠 Home"  # Used for navigation
+
+
+# ----------------------------
+# Navigation Callback
+# ----------------------------
+def set_page(page_name):
+    st.session_state.page = page_name
 
 
 # ----------------------------
@@ -90,7 +186,6 @@ def create_sentiment_gauge(score, sentiment_label):
     Score is assumed to be from 0 to 1.
     """
 
-    # Determine gauge color AND title color
     if sentiment_label == 'POSITIVE':
         gauge_color = "#4CAF50"  # Green
         title_color = "#4CAF50"
@@ -101,7 +196,6 @@ def create_sentiment_gauge(score, sentiment_label):
         gauge_color = "#FBBC05"  # Yellow
         title_color = "#FBBC05"
 
-    # Create the title text with HTML for coloring
     title_text = f"Overall Sentiment: <span style='color:{title_color}; font-weight:bold;'>{sentiment_label}</span>"
 
     fig = go.Figure(go.Indicator(
@@ -242,13 +336,14 @@ def save_to_history(result: Dict):
 # Sidebar
 # ----------------------------
 with st.sidebar:
-    st.markdown("### 🧠 Dashboard")
-    st.markdown("*Advanced Sentiment Analysis*")
+    st.markdown("### Dashboard")
+    st.markdown("Advanced Sentiment Analysis")
     st.markdown("---")
 
-    page = st.radio(
+    st.radio(
         "Navigation",
         ["🏠 Home", "🔍 Analyzer", "🎬 Video Analysis", "🤖 Chatbot", "📚 History", "ℹ️ About"],
+        key="page",
         label_visibility="collapsed"
     )
 
@@ -266,8 +361,9 @@ with st.sidebar:
 # ----------------------------
 # Pages
 # ----------------------------
-if page == "🏠 Home":
-    st.markdown('<div class="hero-title">🧠 Sentiment Analysis Platform</div>', unsafe_allow_html=True)
+
+if st.session_state.page == "🏠 Home":
+    st.markdown('<div class="hero-title">🗨️ Sentiment Analysis Platform</div>', unsafe_allow_html=True)
     st.markdown('<div class="hero-subtitle">Advanced Multi-Modal Sentiment Analysis</div>', unsafe_allow_html=True)
 
     st.markdown("""
@@ -277,6 +373,7 @@ if page == "🏠 Home":
         <span class="badge">🎯 Aspect Analysis</span>
         <span class="badge">💬 AI Chatbot</span>
         <span class="badge">🎤 Voice Analysis</span>
+        <span class="badge">🌐 Webpage Analysis</span>
     </div>
     """, unsafe_allow_html=True)
 
@@ -284,15 +381,18 @@ if page == "🏠 Home":
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.markdown("### 📝 Text Analysis\nDual-model AI sentiment detection")
+        st.button("📝 Text Analysis", on_click=set_page, args=["🔍 Analyzer"], use_container_width=True)
+        st.markdown("<p style='text-align:center;'>Dual-model AI sentiment detection</p>", unsafe_allow_html=True)
     with col2:
-        st.markdown("### 🎬 Video Analysis\nTranscribe and analyze videos")
+        st.button("🎬 Video Analysis", on_click=set_page, args=["🎬 Video Analysis"], use_container_width=True)
+        st.markdown("<p style='text-align:center;'>Transcribe and analyze videos</p>", unsafe_allow_html=True)
     with col3:
-        st.markdown("### 🤖 Chatbot\nEmotion-aware conversations")
+        st.button("🤖 Chatbot", on_click=set_page, args=["🤖 Chatbot"], use_container_width=True)
+        st.markdown("<p style='text-align:center;'>Emotion-aware conversations</p>", unsafe_allow_html=True)
 
     st.info("👉 Navigate to any section to start analyzing!")
 
-elif page == "🔍 Analyzer":
+elif st.session_state.page == "🔍 Analyzer":
     st.markdown("## 🔍 Advanced Sentiment Analyzer")
 
     tab1, tab2, tab3, tab4 = st.tabs(["📝 Text", "🎤 Voice", "🎯 Aspects", "🌐 URL"])
@@ -365,6 +465,7 @@ elif page == "🔍 Analyzer":
                         save_to_history(overall)
             else:
                 st.warning("⚠️ Please enter some text")
+
     with tab4:
         st.markdown("### 🌐 Webpage Analysis")
         url_input = st.text_input("Enter a URL to scrape and analyze",
@@ -394,7 +495,7 @@ elif page == "🔍 Analyzer":
             else:
                 st.warning("⚠️ Please enter a URL")
 
-elif page == "🎬 Video Analysis":
+elif st.session_state.page == "🎬 Video Analysis":
     st.markdown("## 🎬 Video Analysis")
 
     tab1, tab2 = st.tabs(["📤 Upload Video", "🔗 YouTube URL"])
@@ -567,7 +668,9 @@ elif page == "🎬 Video Analysis":
                                     st.error("❌ Audio extraction failed")
 
                             # Cleanup
+                            # --- THIS IS THE FIX ---
                             for f in [video_path, audio_path]:
+                                # --- END OF FIX ---
                                 if f and os.path.exists(f):
                                     try:
                                         os.remove(f)
@@ -580,7 +683,7 @@ elif page == "🎬 Video Analysis":
             else:
                 st.warning("⚠️ Please enter a YouTube URL")
 
-elif page == "🤖 Chatbot":
+elif st.session_state.page == "🤖 Chatbot":
     st.markdown("## 🤖 Sentiment-Aware Chatbot")
     st.info("Chat with AI that understands your emotions!")
 
@@ -606,7 +709,7 @@ elif page == "🤖 Chatbot":
             st.session_state.chat_history = []
             st.rerun()
 
-elif page == "📚 History":
+elif st.session_state.page == "📚 History":
     st.markdown("## 📚 Analysis History")
 
     if not st.session_state.history:
@@ -636,46 +739,53 @@ elif page == "📚 History":
                 with col3:
                     st.metric("Confidence", f"{analysis['confidence']:.2%}")
 
-elif page == "ℹ️ About":
+elif st.session_state.page == "ℹ️ About":
     st.markdown("## ℹ️ About This Platform")
 
     st.markdown("""
     ### 🚀 Features
 
-    1. ✅ Text Sentiment Analysis (BERT + VADER)
-    2. ✅ Voice Recording & Transcription
-    3. ✅ Video Analysis
-    4. ✅ YouTube Video Analysis
-    5. ✅ Aspect-Based Sentiment Analysis
-    6. ✅ AI Chatbot with Emotion Detection
-    7. ✅ Analysis History & Export
+    1.  ✅ Text Sentiment Analysis (BERT + VADER)
+    2.  ✅ Voice Recording & Transcription
+    3.  ✅ Video Analysis
+    4.  ✅ YouTube Video Analysis
+    5.  ✅ Aspect-Based Sentiment Analysis
+    6.  ✅ AI Chatbot with Emotion Detection
+    7.  ✅ Analysis History & Export
+    8.  ✅ Webpage URL Scraping & Analysis
 
     ### 📦 Installation
-
-    bash
+    ```bash
+    # Install main libraries
     pip install "numpy<2.0" protobuf==3.20.3
     pip install torch transformers streamlit vaderSentiment
-    pip install SpeechRecognition pydub opencv-python
-    pip install yt-dlp spacy plotly pandas
-    python -m spacy download en_core_web_sm
 
+    # Install audio/video libraries
+    pip install SpeechRecognition pydub opencv-python
+
+    # Install web/data libraries
+    pip install yt-dlp spacy plotly pandas
+    pip install requests beautifulsoup4
+
+    # Download NLP model
+    python -m spacy download en_core_web_sm
+    ```
 
     ### 🚀 Run
-
-    bash
+    ```bash
     streamlit run app.py
-
+    ```
 
     ### 🎯 How It Works
 
-    - *BERT* (60%): Deep contextual understanding
-    - *VADER* (40%): Lexicon-based analysis
-    - *Combined*: Weighted average with confidence metrics
+    -   *BERT* (60%): Deep contextual understanding
+    -   *VADER* (40%): Lexicon-based analysis
+    -   *Combined*: Weighted average with confidence metrics
 
     ### 👥 Project
 
-    - *Type:* Final Year Project
-    - *Status:* Production Ready ✅
+    -   *Type:* Final Year Project
+    -   *Status:* Production Ready ✅
     """)
 
     st.success("✅ All features working perfectly!")
