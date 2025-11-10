@@ -9,7 +9,7 @@ vaderSentiment>=3.3.2
 streamlit>=1.28.0
 
 # Audio/Video Processing
-SpeechRecognition>=3.10.0
+openai-whisper
 pydub>=0.25.1
 opencv-python>=4.8.0
 
@@ -27,3 +27,4 @@ beautifulsoup4
 
 #
 scikit-learn
+
