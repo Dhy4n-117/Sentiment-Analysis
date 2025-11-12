@@ -15,7 +15,6 @@ from analysis_logic import (
     extract_aspects,
     download_youtube_video,
     chatbot_response,
-    recognize_speech,
     extract_audio_from_video,
     transcribe_audio,
     scrape_webpage_text
@@ -40,24 +39,6 @@ st.markdown("""
     * { font-family: 'Inter', sans-serif; }
     .main { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #f1f5f9; }
     [data-testid="stSidebar"] { background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); border-right: 1px solid #334155; }
-
-    /* --- ANIMATION KEYFRAMES --- */
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    /* --- END ANIMATIONS --- */
 
     [data-testid="stSidebar"] > div:first-child > div:first-child {
         padding-top: 1rem; 
@@ -90,7 +71,6 @@ st.markdown("""
         color: #A79BFF; /* Main title purple */
         margin-bottom: 1rem;
         text-align: center; /* Centered */
-        animation: fadeIn 0.8s ease-out; /* Added animation */
     }
     .hero-subtitle {
         font-size: 1.2rem;
@@ -98,23 +78,15 @@ st.markdown("""
         text-align: center; /* Centered */
         margin-bottom: 2rem;
         margin-top: -1rem; 
-        animation: fadeIn 1s ease-out; /* Added animation */
     }
 
-    .feature-badges { 
-        display: flex; 
-        justify-content: center; 
-        gap: 1rem; 
-        flex-wrap: wrap; 
-        margin: 2rem 0; 
-        animation: fadeIn 1.2s ease-out; /* Added animation */
-    }
+    .feature-badges { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; margin: 2rem 0; }
     .badge { 
-        background: rgba(167, 155, 255, 0.1); 
-        border: 1px solid #A79BFF; 
+        background: rgba(167, 155, 255, 0.1); /* New purple alpha */
+        border: 1px solid #A79BFF; /* New purple border */
         color: #f1f5f9; 
         padding: 0.5rem 1rem; 
-        border-radius: 50px; 
+        border-radius: 50px; /* Pill shape */
         font-size: 0.9rem; 
         font-weight: 500; 
     }
@@ -123,11 +95,12 @@ st.markdown("""
     .sentiment-score { font-size: 3rem; font-weight: 800; margin-bottom: 0.5rem; }
     .sentiment-label { font-size: 1.3rem; text-transform: uppercase; letter-spacing: 2px; }
 
+    /* --- THIS IS THE CHANGED BUTTON STYLE --- */
     .stButton>button {
-        background: rgba(167, 155, 255, 0.1); 
-        color: #f1f5f9; 
-        border: 1px solid #A79BFF; 
-        border-radius: 50px; 
+        background: linear-gradient(90deg, #004aad, #cb6ce6); /* Your new gradient */
+        color: #f1f5f9; /* White text */
+        border: none; /* Removed border */
+        border-radius: 50px; /* Pill shape */
         padding: 0.75rem 1.5rem; 
         font-weight: 600; 
         transition: all 0.3s ease; 
@@ -135,21 +108,19 @@ st.markdown("""
     }
     .stButton>button:hover { 
         transform: translateY(-2px); 
-        background: rgba(167, 155, 255, 0.2); 
-        border-color: #A79BFF; 
-        box-shadow: 0 5px 15px rgba(167, 155, 255, 0.2); 
+        box-shadow: 0 5px 15px rgba(203, 108, 230, 0.4); /* Shadow from gradient */
+        filter: brightness(1.2); /* Brighten on hover */
     }
+    /* --- END OF CHANGE --- */
 
-    /* --- CARD CONTAINER STYLE --- */
+    /* Card container style */
     [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlockBorderWrapper"] {
         background-color: rgba(167, 155, 255, 0.05); 
         border-color: #A79BFF; 
         border-radius: 12px;
         padding: 1.5rem;
         margin-bottom: 1rem;
-        animation: fadeInUp 0.8s ease-out; /* Added animation */
     }
-    /* --- END CARD STYLE --- */
 
     /* Sidebar radio button styles */
     [data-testid="stRadio"] > div[role="radiogroup"] > label[data-baseweb="radio"] > div:first-child {
@@ -385,7 +356,7 @@ with st.sidebar:
 
     st.radio(
         "Navigation",
-        ["🏠 Home", "📝 Analyzer", "🎬 Video Analysis", "🤖 Chatbot", "📚 History", "ℹ️ About"],
+        ["🏠 Home", "📝 Analyzer", "🎬 File Analysis", "🤖 Chatbot", "📚 History", "ℹ️ About"],
         key="page",
         label_visibility="collapsed"
     )
@@ -413,9 +384,9 @@ if st.session_state.page == "🏠 Home":
     <div class="feature-badges">
         <span class="badge">🤖 BERT + VADER</span>
         <span class="badge">🎬 Video Analysis</span>
+        <span class="badge">🎵 Audio Analysis</span>
         <span class="badge">🎯 Aspect Analysis</span>
         <span class="badge">💬 AI Chatbot</span>
-        <span class="badge">🎤 Voice Analysis</span>
         <span class="badge">🌐 Webpage Analysis</span>
     </div>
     """, unsafe_allow_html=True)
@@ -427,8 +398,8 @@ if st.session_state.page == "🏠 Home":
         st.button("📝 Text Analysis", on_click=set_page, args=["📝 Analyzer"], use_container_width=True)
         st.markdown("<p style='text-align:center;'>Dual-model AI sentiment detection</p>", unsafe_allow_html=True)
     with col2:
-        st.button("🎬 Video Analysis", on_click=set_page, args=["🎬 Video Analysis"], use_container_width=True)
-        st.markdown("<p style='text-align:center;'>Transcribe and analyze videos</p>", unsafe_allow_html=True)
+        st.button("🎬 File Analysis", on_click=set_page, args=["🎬 File Analysis"], use_container_width=True)
+        st.markdown("<p style='text-align:center;'>Transcribe video & audio files</p>", unsafe_allow_html=True)
     with col3:
         st.button("🤖 Chatbot", on_click=set_page, args=["🤖 Chatbot"], use_container_width=True)
         st.markdown("<p style='text-align:center;'>Emotion-aware conversations</p>", unsafe_allow_html=True)
@@ -438,7 +409,7 @@ if st.session_state.page == "🏠 Home":
 elif st.session_state.page == "📝 Analyzer":
     st.markdown("## 📝 Advanced Sentiment Analyzer")
 
-    tab1, tab2, tab3, tab4 = st.tabs(["📝 Text", "🎤 Voice", "🎯 Aspects", "🌐 URL"])
+    tab1, tab2, tab3 = st.tabs(["📝 Text", "🎯 Aspects", "🌐 URL"])
 
     with tab1:
         st.markdown("### Text Analysis")
@@ -464,37 +435,6 @@ elif st.session_state.page == "📝 Analyzer":
                 st.info("Example: 'I love this product! It's amazing and exceeded my expectations.'")
 
     with tab2:
-        st.markdown("### 🎤 Voice Recording")
-
-        try:
-            import pyaudio
-
-            pyaudio_available = True
-        except ImportError:
-            pyaudio_available = False
-
-        if not pyaudio_available:
-            st.warning("⚠️ *Voice Recording Not Available*")
-            st.info(
-                "Install PyAudio: pip install pyaudio (or brew install portaudio && pip install pyaudio on Mac)")
-        else:
-            st.info("🎤 Click to record your voice")
-            if st.button("🎙️ Start Recording", use_container_width=True, key="record_btn"):
-                with st.spinner("Initializing..."):
-                    transcript = recognize_speech(st.spinner("Initializing..."))
-
-                if not transcript.startswith("❌"):
-                    st.success(f"✅ Transcribed: {transcript}")
-                    with st.spinner("🔄 Analyzing..."):
-                        result = analyze_text_comprehensive(transcript, bert_analyzer, vader_analyzer,
-                                                            emotion_pipeline_all)
-                        if result:
-                            show_new_results(result)
-                            save_to_history(result)
-                else:
-                    st.error(transcript)
-
-    with tab3:
         st.markdown("### 🎯 Aspect-Based Analysis")
         aspect_text = st.text_area("Enter text with multiple aspects", height=200, key="aspect_input",
                                    placeholder="e.g., 'The camera is great, but the battery life is disappointing.'")
@@ -514,7 +454,7 @@ elif st.session_state.page == "📝 Analyzer":
             else:
                 st.warning("⚠️ Please enter some text")
 
-    with tab4:
+    with tab3:
         st.markdown("### 🌐 Webpage Analysis")
         url_input = st.text_input("Enter a URL to scrape and analyze",
                                   placeholder="e.g., a news article or blog post URL")
@@ -544,10 +484,10 @@ elif st.session_state.page == "📝 Analyzer":
             else:
                 st.warning("⚠️ Please enter a URL")
 
-elif st.session_state.page == "🎬 Video Analysis":
-    st.markdown("## 🎬 Video Analysis")
+elif st.session_state.page == "🎬 File Analysis":
+    st.markdown("## 🎬 File Analysis (Video/Audio)")
 
-    tab1, tab2 = st.tabs(["📤 Upload Video", "🔗 YouTube URL"])
+    tab1, tab2, tab3 = st.tabs(["🎬 Upload Video", "🎵 Upload Audio", "🔗 YouTube URL"])
 
     with tab1:
         st.success("✅ *Recommended* - Upload your video file directly")
@@ -629,6 +569,66 @@ elif st.session_state.page == "🎬 Video Analysis":
                     st.error(f"❌ Error: {str(e)}")
 
     with tab2:
+        st.info("Upload an audio file (.mp3, .wav, .m4a) to transcribe and analyze.")
+
+        uploaded_audio = st.file_uploader(
+            "Choose an audio file",
+            type=['mp3', 'wav', 'm4a'],  # Audio types
+            key="audio_uploader"
+        )
+
+        if uploaded_audio:
+            st.audio(uploaded_audio)  # Show audio player
+
+            analyze_button_pressed = st.button("🎵 Analyze Audio", use_container_width=True, key="analyze_audio_btn")
+
+            if analyze_button_pressed:
+                try:
+                    os.makedirs("temp_files", exist_ok=True)
+                    # Save the uploaded audio file directly
+                    tmp_path = os.path.join("temp_files", uploaded_audio.name)
+
+                    with st.spinner("💾 Processing..."):
+                        with open(tmp_path, "wb") as f:
+                            f.write(uploaded_audio.read())
+
+                    # No extraction needed, just transcribe
+                    transcript = ""
+                    with st.spinner("📝 Transcribing with Whisper..."):
+                        transcript = transcribe_audio(tmp_path, whisper_model)  # Pass tmp_path directly
+
+                    if not transcript.startswith("❌"):
+                        st.success("✅ Transcription complete!")
+                        with st.expander("📄 Transcript", expanded=True):
+                            st.text_area("", transcript, height=200, key="transcript_display_audio")
+                            st.download_button(
+                                "💾 Download",
+                                transcript,
+                                f"transcript_{int(time.time())}.txt",
+                                key="download_transcript_audio"
+                            )
+
+                        with st.spinner("🔄 Analyzing..."):
+                            result = analyze_text_comprehensive(transcript, bert_analyzer, vader_analyzer,
+                                                                emotion_pipeline_all)
+                            if result:
+                                st.success("✅ Analysis complete!")
+                                show_new_results(result)
+                                save_to_history(result)
+                                st.toast('Analysis complete!', icon='✅')
+                            else:
+                                st.error("Could not analyze the transcribed text.")
+                    else:
+                        st.error(transcript)
+
+                        # Cleanup
+                    if os.path.exists(tmp_path):
+                        os.remove(tmp_path)
+
+                except Exception as e:
+                    st.error(f"❌ Error: {str(e)}")
+
+    with tab3:
         st.info("🔗 Try YouTube direct download - Multiple methods will be attempted")
 
         st.markdown("""
@@ -785,13 +785,13 @@ elif st.session_state.page == "ℹ️ About":
     ### ✨ Features
 
     1.  ✅ Text Sentiment Analysis (BERT + VADER)
-    2.  ✅ Voice Recording & Transcription
-    3.  ✅ Video Analysis
-    4.  ✅ YouTube Video Analysis
-    5.  ✅ Aspect-Based Sentiment Analysis
-    6.  ✅ AI Chatbot with Emotion Detection
-    7.  ✅ Analysis History & Export
-    8.  ✅ Webpage URL Scraping & Analysis
+    2.  ✅ Video Analysis
+    3.  ✅ YouTube Video Analysis
+    4.  ✅ Aspect-Based Sentiment Analysis
+    5.  ✅ AI Chatbot with Emotion Detection
+    6.  ✅ Analysis History & Export
+    7.  ✅ Webpage URL Scraping & Analysis
+    8.  ✅ Audio File Analysis (.mp3, .wav)
     """)
 
     with st.expander("🛠️ Installation"):
@@ -803,8 +803,10 @@ elif st.session_state.page == "ℹ️ About":
         pip install scikit-learn 
 
         # Install audio/video libraries
-        pip install SpeechRecognition pydub opencv-python
+        pip install pydub 
         pip install openai-whisper
+        # SpeechRecognition is still needed for microphone input
+        pip install SpeechRecognition 
 
         # Install web/data libraries
         pip install yt-dlp spacy plotly pandas
