@@ -4,7 +4,6 @@ import cv2
 import yt_dlp
 import spacy
 import torch
-import speech_recognition as sr
 from pydub import AudioSegment
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
@@ -14,7 +13,9 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 import whisper
- ----------------------------
+
+
+# ----------------------------
 # Load Models
 # ----------------------------
 @st.cache_resource
@@ -47,8 +48,8 @@ def load_models():
                                         model="j-hartmann/emotion-english-distilroberta-base",
                                         return_all_scores=True)
 
-        # 6. NEW: Whisper Transcription Model
-        whisper_model = whisper.load_model("medium")  # "tiny", "base", "small", "medium", "large"
+        # 6. Whisper Transcription Model
+        whisper_model = whisper.load_model("base")
 
         return bert_pipeline, vader, nlp, emotion_pipeline, emotion_pipeline_all, whisper_model
 
@@ -95,7 +96,6 @@ def analyze_text_comprehensive(text: str, bert_analyzer, vader_analyzer, emotion
         vader_normalized = (vader_compound + 1) / 2
 
         # --- 3. Hybrid Score (60% BERT + 40% VADER) ---
-        # THIS REMAINS UNCHANGED
         combined_score = (bert_normalized * 0.6) + (vader_normalized * 0.4)
 
         if combined_score >= 0.6:
@@ -194,7 +194,7 @@ def download_youtube_video(url: str, output_path: str = "temp_yt_video.mp4") -> 
             'format': 'bestaudio/best', 'outtmpl': output_path2, 'quiet': True, 'no_warnings': True,
             'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'}],
             'prefer_ffmpeg': True, 'keepvideo': False,
-            'user_agent': 'Mozilla/5.o (X11; Linux x86_64) AppleWebKit/537.36'
+            'user_agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36'
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.extract_info(url, download=True)
@@ -230,8 +230,6 @@ def download_youtube_video(url: str, output_path: str = "temp_yt_video.mp4") -> 
 def chatbot_response(user_message: str, bert_analyzer, vader_analyzer, emotion_pipeline) -> str:
     """Generate sentiment-aware response"""
 
-    # Create a dummy emotion_pipeline_all to pass to the comprehensive function
-    # This is a small hack to reuse the function without loading the all_scores model
     dummy_all_pipeline = lambda x: [[{'label': 'neutral', 'score': 1.0}]]
     analysis = analyze_text_comprehensive(user_message, bert_analyzer, vader_analyzer, dummy_all_pipeline)
 
@@ -268,41 +266,6 @@ def chatbot_response(user_message: str, bert_analyzer, vader_analyzer, emotion_p
     return response
 
 
-# --- UPDATED FUNCTION ---
-def recognize_speech(spinner, whisper_model) -> str:
-    """Speech recognition using Whisper"""
-    try:
-        import pyaudio
-    except ImportError:
-        return "❌ PyAudio not installed. Install with: pip install pyaudio"
-
-    r = sr.Recognizer()
-    try:
-        with sr.Microphone() as source:
-            spinner.text = "🎤 Listening..."
-            r.adjust_for_ambient_noise(source, duration=1)
-            audio = r.listen(source, timeout=10, phrase_time_limit=15)
-
-        spinner.text = "Saving audio..."
-        with open("temp_mic_audio.wav", "wb") as f:
-            f.write(audio.get_wav_data())
-
-        spinner.text = "Transcribing with Whisper..."
-        # Use fp16=False if running on CPU
-        result = whisper_model.transcribe("temp_mic_audio.wav", fp16=False)
-        os.remove("temp_mic_audio.wav")  # Clean up
-
-        transcript = result["text"]
-        if not transcript:
-            return "❌ Could not transcribe (no speech detected)."
-        return transcript
-
-    except Exception as e:
-        if "temp_mic_audio.wav" in locals() and os.path.exists("temp_mic_audio.wav"):
-            os.remove("temp_mic_audio.wav")
-        return f"❌ Error: {str(e)}"
-
-
 def extract_audio_from_video(video_file_path: str) -> str:
     """Extract audio from video"""
     try:
@@ -316,20 +279,22 @@ def extract_audio_from_video(video_file_path: str) -> str:
         return None
 
 
-# --- UPDATED FUNCTION ---
 def transcribe_audio(audio_path: str, whisper_model) -> str:
     """Transcribe audio using Whisper"""
     try:
         spinner_text = "Transcribing with Whisper... (This may take a moment)"
-        st.spinner(spinner_text)  # Use st.spinner here as we can't pass it
+        st.spinner(spinner_text)
 
-        # Use fp16=False if running on CPU
         result = whisper_model.transcribe(audio_path, fp16=False)
 
-        transcript = result["text"]
-        if not transcript:
-            return "❌ Could not transcribe (no speech detected)."
-        return transcript
+        if result and "text" in result:
+            transcript = result["text"]
+            if not transcript.strip():
+                return "❌ Could not transcribe (no speech detected)."
+            return transcript
+        else:
+            return "❌ Transcription failed (no result)."
+
     except Exception as e:
         return f"❌ Error during transcription: {str(e)}"
 
