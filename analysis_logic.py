@@ -52,13 +52,19 @@ def load_models():
                                         top_k=None)
 
         # 6. Whisper Transcription Model
-        whisper_model = whisper.load_model("base") # tiny, base, small, medium, and large
+        whisper_model = whisper.load_model("small") # tiny, base, small, medium, and large
 
         # 7. Sarcasm Detection Model
         sarcasm_pipeline = pipeline("text-classification", model="cardiffnlp/twitter-roberta-base-irony")
 
         # 8. NEW: Speech Emotion Recognition (SER) Model
-        ser_pipeline = pipeline("audio-classification", model="superb/wav2vec2-base-superb-er")
+        
+        try:
+            ser_pipeline = pipeline("audio-classification", model="superb/wav2vec2-base-superb-er")
+        except Exception as e:
+            print("Speech Emotion Recognition failed to load:", e)
+            ser_pipeline = None
+
 
         return sentiment_pipeline, vader, nlp, emotion_pipeline, emotion_pipeline_all, whisper_model, sarcasm_pipeline, ser_pipeline
 
@@ -212,7 +218,7 @@ def download_youtube_video(url: str, output_path: str = "temp_yt_video.mp4") -> 
     try:
         output_path2 = "temp_yt_audio.m4a"
         ydl_opts = {
-            'format': 'bestaudio/best', 'outtmpl': output_path2, 'quiet': True, 'no_warnings': True,
+            'format': 'bestaudio[ext=m4a]/bestaudio/best', 'outtmpl': output_path2, 'quiet': True, 'no_warnings': True,
             'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'}],
             'prefer_ffmpeg': True, 'keepvideo': False,
             'user_agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36'
@@ -437,25 +443,55 @@ def extract_audio_from_video(video_file_path: str) -> str:
         return None
 
 
+
 def transcribe_audio(audio_path: str, whisper_model) -> str:
-    """Transcribe audio using Whisper"""
+    """Transcribe audio using Whisper with defensive checks and debug info."""
     try:
+        # Debug: check file exists and basic properties
+        if not os.path.exists(audio_path):
+            return f"❌ Input audio missing: {audio_path}"
+        try:
+            size_bytes = os.path.getsize(audio_path)
+        except Exception:
+            size_bytes = None
+        try:
+            import librosa
+            duration = librosa.get_duration(filename=audio_path)
+        except Exception:
+            duration = None
+
+        print(f"DEBUG: transcribe_audio -> path={audio_path}, size={size_bytes}, duration={duration}")
+
+        if size_bytes is None or size_bytes < 1000:
+            return "❌ Audio file too small — possible download/conversion error."
+
+        if duration is not None and duration < 0.3:
+            return "❌ Audio duration too short for reliable transcription."
+
         spinner_text = "Transcribing with Whisper... (This may take a moment)"
-        st.spinner(spinner_text)
+        # Use a Streamlit spinner context so it displays to the user
+        with st.spinner(spinner_text):
+            # Force language to English to avoid wrong-language detection on short clips
+            # Increase temperature or task if you want alternatives
+            result = whisper_model.transcribe(audio_path, fp16=False, language="en", task="transcribe")
 
-        result = whisper_model.transcribe(audio_path, fp16=False)
-
-        if result and "text" in result:
-            transcript = result["text"]
-            if not transcript.strip():
+        print("DEBUG: whisper transcribe result keys:", result.keys() if isinstance(result, dict) else type(result))
+        if result and isinstance(result, dict) and "text" in result:
+            transcript = result["text"].strip()
+            if not transcript:
                 return "❌ Could not transcribe (no speech detected)."
             return transcript
         else:
-            return "❌ Transcription failed (no result)."
-
+            # some wrappers return other shapes; handle defensively:
+            if hasattr(result, "text"):
+                txt = getattr(result, "text", "").strip()
+                if txt:
+                    return txt
+            return f"❌ Transcription failed (unexpected result): {type(result).__name__}"
     except Exception as e:
-        return f"❌ Error during transcription: {str(e)}"
-
+        print("DEBUG: transcribe_audio exception:", e)
+        traceback.print_exc()
+        return f"❌ Error during transcription: {e}"
 
 def scrape_webpage_text(url: str) -> str:
     """Scrape text from a webpage URL."""
