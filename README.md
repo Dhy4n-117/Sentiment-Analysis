@@ -1,24 +1,38 @@
-# 🧠 Advanced Sentiment Analysis
+# 🤖 Advanced Sentiment Analysis Platform ✨
 
-This is an advanced multi-modal sentiment analysis platform built with Streamlit. It analyzes sentiment from text, voice, video files, YouTube URLs, and live webpages, providing a comprehensive breakdown of sentiment, emotion, and key topics.
+An intelligent, multi-modal sentiment analysis tool built with Streamlit, Transformers, and Whisper. This platform doesn't just read text; it understands emotion, sarcasm, and even the tone of voice from video and audio files.
 
-The core of the project uses a hybrid model, combining **BERT** for deep contextual understanding and **VADER** for emotional intensity, to produce a nuanced and accurate final score.
+*(I recommend you add a GIF or screenshot of your app here!)*
 
 ---
 
 ## 🚀 Key Features
 
-* **Multi-Modal Analysis:** Get sentiment from 5 different sources:
-    1.  **Text:** Paste in any block of text.
-    2.  **Voice:** Record live audio from your microphone for transcription and analysis.
-    3.  **Video:** Upload `.mp4`, `.mov`, etc., to automatically transcribe and analyze the content.
-    4.  **YouTube:** Paste a YouTube URL to download, transcribe, and analyze the video's audio.
-    5.  **Webpage URL:** Paste a URL to scrape and analyze the text content of a news article or blog post.
-* **Hybrid AI Model:** Uses a weighted average of **BERT** and **VADER** for a robust, nuanced sentiment score.
-* **Rich Visualizations:** Results are displayed with interactive **Plotly charts**, including a sentiment gauge and an emotion bar chart, with all sentiments color-coded.
-* **Aspect-Based Sentiment (ABSA):** Automatically extracts key topics and nouns (e.g., "camera," "battery life") from the text and provides a specific sentiment for each one.
-* **AI Chatbot:** An emotion-aware chatbot that responds to you differently based on the sentiment of your message.
-* **Analysis History:** Automatically saves all analysis results to a session history, which can be downloaded as a CSV file.
+This platform provides a deep, comprehensive understanding of sentiment by combining multiple AI models.
+
+* ✨ **Multi-Modal Analysis:** Analyze text, audio (`.mp3`, `.wav`), and video (`.mp4`) files.
+* 📈 **Hybrid Scoring:** Combines the power of **RoBERTa** (a Transformer model) with the speed of **VADER** (a rule-based model) for a more accurate and nuanced sentiment score.
+* 🎯 **Aspect-Based Sentiment:** Goes beyond a simple overall score. It finds *what* you're talking about (e.g., "camera," "battery life") and analyzes the sentiment for each specific aspect.
+* 🎬 **File & YouTube Analysis:** Upload your own files or just paste a **YouTube URL** to download, transcribe, and analyze the content.
+* 🗣️ **Speech Emotion Recognition:** It's not just *what* you say, but *how* you say it. The tool analyzes the audio's tone to detect emotions like joy, sadness, or anger.
+* 🧐 **Sarcasm Detection:** A dedicated model looks for irony and sarcasm, warning you if the positive words might not mean what you think.
+* 🤖 **Sentiment-Aware Chatbot:** Have a conversation with an AI that understands the emotion behind your messages.
+
+---
+
+## 🛠️ How It Works (The Tech)
+
+This app's power comes from a "committee" of AI models that work together.
+
+1.  **Input:** You provide text, a file, or a URL.
+2.  **Transcription:** If it's audio or video, **OpenAI's Whisper** model creates a highly accurate text transcript.
+3.  **Sentiment Analysis:**
+    * **RoBERTa** and **VADER** analyze the text for a hybrid sentiment score.
+    * **BERT** (a 43-label emotion model) detects emotions like *joy*, *anger*, or *admiration*.
+    * A **Sarcasm-detection** model flags potential irony.
+4.  **Speech Analysis:** A **Wav2Vec2** model analyzes the raw audio (from the file or video) to find the emotion in the *tone of voice*.
+5.  **NLP:** **SpaCy** is used to break down sentences and find the "aspects" (noun chunks) for analysis.
+6.  **Output:** All this information is presented in a clean, interactive dashboard with charts and detailed breakdowns.
 
 ---
 
@@ -29,31 +43,6 @@ This project has been refactored for clarity, maintainability, and scalability. 
 * `app.py`: The **frontend** of the application. This file contains all the Streamlit code responsible for the user interface (UI), such as pages, buttons, charts, and layout.
 * `analysis_logic.py`: The **backend** "brain" of the application. This file contains all the core data processing and AI functions (model loading, text analysis, web scraping, video transcription, etc.).
 * `requirements.txt`: A list of all required Python packages.
-
----
-
-## 🎯 How It Works
-
-This application follows a clear logic flow depending on the input type:
-
-1.  **Hybrid Sentiment Core:**
-    * **BERT** (from `transformers`): Analyzes the text for deep contextual understanding (e.g., "I'm not happy" is negative, even with the word "happy").
-    * **VADER**: Analyzes the text for emotional intensity (e.g., "I LOVE this" is more positive than "I like this").
-    * **Combined Score:** A weighted average (60% BERT, 40% VADER) is calculated to produce a single, robust score.
-
-2.  **Text, Voice, and Video Analysis:**
-    * **Text:** Fed directly into the Hybrid Sentiment Core.
-    * **Voice:** Recorded and transcribed using the `SpeechRecognition` library. The resulting text is then fed into the core.
-    * **Video/YouTube:** The file is processed with `FFmpeg` and `pydub` to extract the audio. The audio is then transcribed, and the text is fed into the core.
-
-3.  **Webpage Analysis:**
-    * The URL is fetched using the `requests` library.
-    * `BeautifulSoup4` parses the HTML to scrape and clean all the main article text.
-    * The resulting text is fed into the core.
-
-4.  **Aspect-Based Analysis:**
-    * After the main analysis, `SpaCy` is used to parse the text and find key nouns and topics.
-    * A sentiment analysis is run on the text surrounding each topic to get a specific score for that aspect.
 
 ---
 
