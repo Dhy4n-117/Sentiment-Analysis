@@ -1,30 +1,17 @@
-# Core ML/AI
-numpy>=1.22.4,<2.0
-protobuf==3.20.3
-torch>=2.0.0
-transformers>=4.30.0
-vaderSentiment>=3.3.2
-SpeechRecognition
-
-# Web Framework
-streamlit>=1.28.0
-
-# Audio/Video Processing
+numpy<2.0
+protobuf>=5.0,<6.0
+torch
+transformers
+streamlit
+vaderSentiment
+scikit-learn
+pydub
 openai-whisper
-opencv-python>=4.8.0
-
-# YouTube & NLP
-yt-dlp>=2023.10.13
-spacy>=3.6.0
-
-# Data & Visualization
-plotly>=5.14.0
-pandas>=2.0.0
-
-# Webpage Analysis
+yt-dlp
+spacy
+plotly
+pandas
 requests
 beautifulsoup4
-
-#
-scikit-learn
-
+librosa
+SpeechRecognition
