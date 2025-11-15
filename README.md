@@ -2,8 +2,6 @@
 
 An intelligent, multi-modal sentiment analysis tool built with Streamlit, Transformers, and Whisper. This platform doesn't just read text; it understands emotion, sarcasm, and even the tone of voice from video and audio files.
 
-*(I recommend you add a GIF or screenshot of your app here!)*
-
 ---
 
 ## 🚀 Key Features
