@@ -345,7 +345,6 @@ def show_new_results(result: Dict, aspects: List[Dict] = None, speech_emotion_re
             """, unsafe_allow_html=True)
 
     # --- NEW CARD: MULTI-MODAL INSIGHT ---
-        # PASTE this new block (in place of lines 297-308):
 
         # Check that it's a dictionary AND not empty
         if isinstance(speech_emotion_results, dict) and speech_emotion_results:
@@ -905,7 +904,7 @@ elif st.session_state.page == "🎬 File Analysis":
 
 elif st.session_state.page == "🤖 Chatbot":
     st.markdown("### 🤖 AI Chatbot")
-    st.info("Chat with our sentiment-aware AI assistant!")
+    st.info("Chat Here...")
 
     # Display chat history
     for message in st.session_state.chat_history:
